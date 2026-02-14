@@ -88,11 +88,33 @@
             padding: 8px 12px;
             border-radius: 12px 12px 0 0;
         }
-        .tabla-card table { font-size: 0.78rem; }
+        .tabla-scroll-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .tabla-card table { font-size: 0.78rem; min-width: 280px; }
         .tabla-card th { font-size: 0.68rem; font-weight: 600; padding: 6px 4px; color: #94a3b8; }
         .tabla-card td { padding: 6px 4px; }
         .tabla-card .equipo-cell { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .pasa-ronda { background-color: rgba(59,130,246,0.07); }
+
+        /* Columnas sticky: # y Equipo */
+        .col-sticky-num {
+            position: sticky; left: 0; z-index: 2;
+            background: #1e293b;
+            min-width: 26px;
+        }
+        .col-sticky-equipo {
+            position: sticky; left: 26px; z-index: 2;
+            background: #1e293b;
+            /* sombra sutil para indicar que hay contenido detrás */
+            box-shadow: 2px 0 6px rgba(0,0,0,0.35);
+        }
+        .pasa-ronda .col-sticky-num,
+        .pasa-ronda .col-sticky-equipo {
+            /* rgba(59,130,246,0.07) sobre #1e293b = ~#202f48 */
+            background: #202f48;
+        }
         .btn-ver-grupo {
             font-size: 0.72rem;
             color: #60a5fa;
@@ -264,29 +286,30 @@
                         {{ g.nombre }}
                     </div>
                     <div class="card-body p-0">
+                        <div class="tabla-scroll-wrap">
                         <table class="table mb-0" style="border-collapse:collapse;">
                             <thead>
                                 <tr style="border-bottom:1px solid #334155;">
-                                    <th class="ps-2">#</th>
-                                    <th>Equipo</th>
+                                    <th class="ps-2 col-sticky-num text-center">#</th>
+                                    <th class="col-sticky-equipo">Equipo</th>
                                     <th class="text-center">Pts</th>
-                                    <th class="text-center d-none d-sm-table-cell">PJ</th>
-                                    <th class="text-center d-none d-sm-table-cell">GF</th>
-                                    <th class="text-center d-none d-sm-table-cell">GC</th>
+                                    <th class="text-center">PJ</th>
+                                    <th class="text-center">GF</th>
+                                    <th class="text-center">GC</th>
                                     <th class="text-center">DG</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for equipo, s in tablas[g.id] %}
                                 <tr style="border-bottom:1px solid #1e293b;" class="{% if loop.index <= 2 %}pasa-ronda{% endif %}">
-                                    <td class="ps-2 text-center fw-bold {% if loop.index==1 %}text-warning{% elif loop.index==2 %}text-info{% endif %}">{{ loop.index }}</td>
-                                    <td class="equipo-cell {% if loop.index<=2 %}fw-bold{% endif %}">
+                                    <td class="col-sticky-num text-center fw-bold {% if loop.index==1 %}text-warning{% elif loop.index==2 %}text-info{% endif %}">{{ loop.index }}</td>
+                                    <td class="col-sticky-equipo equipo-cell {% if loop.index<=2 %}fw-bold{% endif %}">
                                         {{ equipo }}{% if loop.index<=2 %}<span class="text-success ms-1" style="font-size:.6rem">✓</span>{% endif %}
                                     </td>
                                     <td class="text-center fw-bold {% if loop.index<=2 %}text-warning{% endif %}">{{ s.pts }}</td>
-                                    <td class="text-center text-muted-custom d-none d-sm-table-cell">{{ s.pj }}</td>
-                                    <td class="text-center text-success d-none d-sm-table-cell">{{ s.gf }}</td>
-                                    <td class="text-center text-danger d-none d-sm-table-cell">{{ s.gc }}</td>
+                                    <td class="text-center text-muted-custom">{{ s.pj }}</td>
+                                    <td class="text-center text-success">{{ s.gf }}</td>
+                                    <td class="text-center text-danger">{{ s.gc }}</td>
                                     <td class="text-center {% if s.gf-s.gc>0 %}text-success{% elif s.gf-s.gc<0 %}text-danger{% endif %}">
                                         {{ '%+d'%(s.gf-s.gc) if s.gf!=s.gc else '0' }}
                                     </td>
@@ -294,6 +317,7 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                        </div>
                     </div>
                     <a href="/publico/{{ t.id }}/grupo/{{ g.id }}" class="btn-ver-grupo">
                         Ver partidos del grupo →

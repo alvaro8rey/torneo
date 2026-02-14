@@ -55,7 +55,7 @@
         .header-sub { font-size: 0.68rem; color: #64748b; margin-top: 2px; }
 
         /* ── TABLA DE CLASIFICACIÓN ── */
-        .tabla-clasificacion { font-size: 0.82rem; }
+        .tabla-clasificacion { font-size: 0.82rem; min-width: 360px; }
         .tabla-clasificacion th {
             font-size: 0.68rem;
             font-weight: 600;
@@ -69,6 +69,28 @@
         .tabla-clasificacion tbody tr:last-child td { border-bottom: none; }
         .pasa-ronda { background-color: rgba(59,130,246,0.06); }
         .equipo-cell { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Columnas sticky: # y Equipo */
+        .col-sticky-num {
+            position: sticky; left: 0; z-index: 2;
+            background: #1e293b;
+            min-width: 30px;
+        }
+        .col-sticky-equipo {
+            position: sticky; left: 30px; z-index: 2;
+            background: #1e293b;
+            box-shadow: 2px 0 6px rgba(0,0,0,0.35);
+        }
+        .pasa-ronda .col-sticky-num,
+        .pasa-ronda .col-sticky-equipo {
+            /* rgba(59,130,246,0.06) sobre #1e293b = ~#202e47 */
+            background: #202e47;
+        }
+
+        .tabla-scroll-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
 
         /* ── SECCIÓN PARTIDOS ── */
         .section-label {
@@ -201,30 +223,30 @@
         <!-- ═══ CLASIFICACIÓN ═══ -->
         <div class="card mb-3" style="overflow:hidden;">
             <div class="card-section-header">Clasificación</div>
-            <div style="overflow-x: auto;">
-                <table class="table tabla-clasificacion mb-0" style="min-width: 300px;">
+            <div class="tabla-scroll-wrap">
+                <table class="table tabla-clasificacion mb-0">
                     <thead>
                         <tr>
-                            <th class="ps-3">#</th>
-                            <th>Equipo</th>
+                            <th class="col-sticky-num text-center">#</th>
+                            <th class="col-sticky-equipo">Equipo</th>
                             <th class="text-center">Pts</th>
                             <th class="text-center">PJ</th>
-                            <th class="text-center d-none d-sm-table-cell">PG</th>
-                            <th class="text-center d-none d-sm-table-cell">PE</th>
-                            <th class="text-center d-none d-sm-table-cell">PP</th>
-                            <th class="text-center d-none d-sm-table-cell">GF</th>
-                            <th class="text-center d-none d-sm-table-cell">GC</th>
+                            <th class="text-center">PG</th>
+                            <th class="text-center">PE</th>
+                            <th class="text-center">PP</th>
+                            <th class="text-center">GF</th>
+                            <th class="text-center">GC</th>
                             <th class="text-center">DG</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for equipo, s in tabla %}
                         <tr class="{% if loop.index <= 2 %}pasa-ronda{% endif %}">
-                            <td class="ps-3 text-center fw-bold
+                            <td class="col-sticky-num text-center fw-bold
                                 {% if loop.index==1 %}text-warning{% elif loop.index==2 %}text-info{% endif %}">
                                 {{ loop.index }}
                             </td>
-                            <td class="equipo-cell {% if loop.index<=2 %}fw-bold{% endif %}">
+                            <td class="col-sticky-equipo equipo-cell {% if loop.index<=2 %}fw-bold{% endif %}">
                                 {{ equipo }}
                                 {% if loop.index<=2 %}
                                     <span class="text-success ms-1" style="font-size:.65rem;">✓</span>
@@ -232,11 +254,11 @@
                             </td>
                             <td class="text-center fw-bold {% if loop.index<=2 %}text-warning{% endif %}">{{ s.pts }}</td>
                             <td class="text-center text-muted-custom">{{ s.pj }}</td>
-                            <td class="text-center text-success d-none d-sm-table-cell">{{ s.pg }}</td>
-                            <td class="text-center text-muted-custom d-none d-sm-table-cell">{{ s.pe }}</td>
-                            <td class="text-center text-danger d-none d-sm-table-cell">{{ s.pp }}</td>
-                            <td class="text-center text-success d-none d-sm-table-cell">{{ s.gf }}</td>
-                            <td class="text-center text-danger d-none d-sm-table-cell">{{ s.gc }}</td>
+                            <td class="text-center text-success">{{ s.pg }}</td>
+                            <td class="text-center text-muted-custom">{{ s.pe }}</td>
+                            <td class="text-center text-danger">{{ s.pp }}</td>
+                            <td class="text-center text-success">{{ s.gf }}</td>
+                            <td class="text-center text-danger">{{ s.gc }}</td>
                             <td class="text-center {% if s.gf-s.gc>0 %}text-success{% elif s.gf-s.gc<0 %}text-danger{% endif %}">
                                 {{ '%+d'%(s.gf-s.gc) if s.gf!=s.gc else '0' }}
                             </td>
