@@ -64,7 +64,8 @@
     <div class="container-fluid py-5 px-4">
         <header class="text-center mb-5">
             <div class="mb-3">
-                <a href="/" class="btn btn-outline-secondary btn-sm me-2">← Todos los torneos</a>
+                <a href="/admin" class="btn btn-outline-secondary btn-sm me-2">← Todos los torneos</a>
+                <a href="/publico/{{ t.id }}" target="_blank" class="btn btn-outline-info btn-sm me-2">Vista Pública</a>
                 <a href="/editar_equipos/{{ t.id }}" class="btn btn-outline-success btn-sm me-2">✎ Editar Equipos</a>
                 <a href="/configurar_cruces/{{ t.id }}" class="btn btn-outline-warning btn-sm">⚙️ Configurar Cruces</a>
             </div>
