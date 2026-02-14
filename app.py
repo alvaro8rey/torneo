@@ -252,6 +252,41 @@ def crear_torneo():
         db.session.commit()
     return redirect(url_for('index'))
 
+@app.route('/editar_equipos/<int:torneo_id>', methods=['GET', 'POST'])
+def editar_equipos(torneo_id):
+    torneo = Torneo.query.get_or_404(torneo_id)
+    grupos = Grupo.query.filter_by(torneo_id=torneo_id).filter(Grupo.nombre.like('Grupo %')).all()
+
+    if request.method == 'POST':
+        for g in grupos:
+            n = int(request.form.get(f'num_equipos_{g.id}', 0))
+            equipos_viejos = [e.strip() for e in g.equipos.split(',')]
+            equipos_nuevos = []
+            for i in range(n):
+                nuevo = request.form.get(f'equipo_{g.id}_{i}', '').strip()
+                if not nuevo:
+                    nuevo = equipos_viejos[i] if i < len(equipos_viejos) else f'EQUIPO {i+1}'
+                equipos_nuevos.append(nuevo.upper())
+
+            # Renombrar en todos los partidos del grupo
+            for i, nombre_nuevo in enumerate(equipos_nuevos):
+                if i < len(equipos_viejos):
+                    nombre_viejo = equipos_viejos[i]
+                    if nombre_viejo != nombre_nuevo:
+                        for p in g.partidos:
+                            if p.equipo1 == nombre_viejo:
+                                p.equipo1 = nombre_nuevo
+                            if p.equipo2 == nombre_viejo:
+                                p.equipo2 = nombre_nuevo
+
+            g.equipos = ', '.join(equipos_nuevos)
+
+        db.session.commit()
+        actualizar_cruces_eliminatorias(torneo_id)
+        return redirect(url_for('ver_torneo', t_id=torneo_id))
+
+    return render_template('editar_equipos.html', torneo=torneo, grupos=grupos)
+
 @app.route('/configurar_cruces/<int:torneo_id>', methods=['GET', 'POST'])
 def configurar_cruces(torneo_id):
     torneo = Torneo.query.get_or_404(torneo_id)
