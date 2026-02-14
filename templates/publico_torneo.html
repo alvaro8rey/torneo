@@ -3,215 +3,342 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <title>{{ t.nombre }}</title>
     <style>
-        body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .card { background-color: #1e293b; border: 1px solid #334155; color: #f8fafc; border-radius: 12px; }
+        * { box-sizing: border-box; }
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── COLORES BASE ── */
+        .card { background-color: #1e293b; border: 1px solid #2d3f55; color: #f8fafc; border-radius: 12px; }
         .table { color: #f8fafc; }
-        .table-hover tbody tr:hover { background-color: #334155; color: white; }
-
-        /* Badges y Colores */
-        .badge-oro { background: linear-gradient(45deg, #fbbf24, #d97706); color: #000; font-weight: bold; }
-        .badge-plata { background: linear-gradient(45deg, #e2e8f0, #94a3b8); color: #000; font-weight: bold; }
-        .badge-campo { background-color: #3b82f6; color: white; font-weight: bold; }
-
-        /* Tipografía y Estados */
-        .clasificado-bold { font-weight: 800; color: #60a5fa; }
-        .penaltis-tag { color: #fbbf24; font-size: 0.75rem; font-weight: bold; display: block; line-height: 1; }
         .text-muted-custom { color: #94a3b8 !important; }
-
-        /* Layout */
-        .col-divider { border-right: 2px dashed #334155; }
-        .section-title { text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #3b82f6; display: inline-block; padding-bottom: 5px; margin-bottom: 25px; }
-        .match-card { border-left: 4px solid transparent; }
-        .match-card.en-curso { border-left-color: #ef4444; animation: pulse-border 2s infinite; }
-
-        @keyframes pulse-border {
-            0%, 100% { border-left-color: #ef4444; }
-            50% { border-left-color: #fca5a5; }
-        }
-
-        /* Marcador central */
-        .score-container {
-            min-width: 85px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-        }
-
-        /* Colores de Grupos */
-        .bg-grupo-a { background-color: #fde047; color: #000; }
-        .bg-grupo-b { background-color: #c084fc; color: #000; }
-        .bg-grupo-c { background-color: #fb923c; color: #000; }
+        .bg-grupo-a { background-color: #f59e0b; color: #000; }
+        .bg-grupo-b { background-color: #8b5cf6; color: #fff; }
+        .bg-grupo-c { background-color: #f97316; color: #fff; }
         .bg-grupo-d { background-color: #3b82f6; color: #fff; }
+        .badge-oro   { background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; font-weight: 700; }
+        .badge-plata { background: linear-gradient(135deg, #cbd5e1, #94a3b8); color: #000; font-weight: 700; }
+        .badge-campo { background: #3b82f6; color: #fff; font-weight: 700; border-radius: 8px; }
 
-        /* Badge EN VIVO */
-        .badge-live {
-            background: linear-gradient(45deg, #ef4444, #dc2626);
-            color: white;
-            font-weight: bold;
-            font-size: 0.7rem;
-            padding: 3px 8px;
-            border-radius: 20px;
-            animation: blink 1.5s infinite;
-            white-space: nowrap;
-        }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+        /* ── ANIMACIONES ── */
+        @keyframes blink      { 0%,100%{opacity:1} 50%{opacity:.45} }
+        @keyframes pulse-red  { 0%,100%{border-left-color:#ef4444} 50%{border-left-color:#fca5a5} }
 
-        /* Tablas de clasificación: resaltar posiciones de pase */
-        .pasa-ronda { background-color: rgba(59, 130, 246, 0.08); }
-
-        /* Header público */
-        .header-pub {
-            background: linear-gradient(135deg, #1e3a5f 0%, #1e293b 100%);
-            border-bottom: 3px solid #3b82f6;
-            padding: 1.5rem 0;
-            margin-bottom: 2rem;
-        }
         .live-dot {
-            width: 10px; height: 10px;
+            width: 8px; height: 8px;
             background: #ef4444;
             border-radius: 50%;
             display: inline-block;
-            animation: blink 1.5s infinite;
-            margin-right: 6px;
+            animation: blink 1.4s infinite;
+        }
+        .badge-live {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+            animation: blink 1.4s infinite;
+            white-space: nowrap;
         }
 
-        /* Goleadores: top 3 destacados */
-        .gol-top1 { color: #fbbf24; font-weight: bold; }
-        .gol-top2 { color: #e2e8f0; font-weight: bold; }
-        .gol-top3 { color: #fb923c; font-weight: bold; }
+        /* ── HEADER ── */
+        .header-pub {
+            background: linear-gradient(135deg, #0f2d4a 0%, #1e293b 100%);
+            border-bottom: 2px solid #3b82f6;
+            padding: 14px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-pub h1 { font-size: 1.1rem; font-weight: 800; margin: 0; }
+
+        /* ── SECCIONES ── */
+        .section-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #60a5fa;
+            border-bottom: 2px solid #3b82f6;
+            display: inline-block;
+            padding-bottom: 4px;
+            margin-bottom: 16px;
+        }
+        .section-title.gold  { color: #fbbf24; border-bottom-color: #d97706; }
+        .section-title.green { color: #4ade80; border-bottom-color: #16a34a; }
+
+        /* ── CLASIFICACIÓN ── */
+        .tabla-card .card-header {
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 8px 12px;
+            border-radius: 12px 12px 0 0;
+        }
+        .tabla-card table { font-size: 0.78rem; }
+        .tabla-card th { font-size: 0.68rem; font-weight: 600; padding: 6px 4px; color: #94a3b8; }
+        .tabla-card td { padding: 6px 4px; }
+        .tabla-card .equipo-cell { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pasa-ronda { background-color: rgba(59,130,246,0.07); }
+        .btn-ver-grupo {
+            font-size: 0.72rem;
+            color: #60a5fa;
+            background: transparent;
+            border: 1px solid #334155;
+            border-radius: 0 0 12px 12px;
+            padding: 8px;
+            width: 100%;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+            transition: background 0.15s;
+        }
+        .btn-ver-grupo:hover { background: #1e3a5f; color: #93c5fd; }
+
+        /* ── TARJETA DE PARTIDO ── */
+        /*
+         * Layout móvil (< 576px):
+         *   Línea 1: [hora] [badge] ────────── [estado]
+         *   Línea 2: [equipo1…] [score] [equipo2…]
+         *
+         * Layout desktop (≥ 576px):
+         *   Una sola línea: [hora] [badge] [eq1] [score] [eq2] [estado]
+         */
+        .match-card {
+            border-left: 3px solid transparent;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            overflow: hidden;
+        }
+        .match-card.en-curso { border-left-color: #ef4444; animation: pulse-red 2s infinite; }
+
+        .match-body { padding: 8px 10px; }
+
+        /* Móvil: 2 líneas */
+        .match-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .match-meta .hora { font-size: 0.75rem; font-weight: 600; color: #f59e0b; min-width: 36px; }
+        .match-meta .grupo-badge {
+            font-size: 0.6rem; font-weight: 700;
+            padding: 2px 6px; border-radius: 4px;
+        }
+        .match-meta .spacer { flex: 1; }
+        .match-estado { font-size: 0.7rem; font-weight: 700; }
+
+        .match-teams {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .team-name {
+            flex: 1;
+            font-size: 0.82rem;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .team-name.left  { text-align: right; }
+        .team-name.right { text-align: left; }
+        .team-name.winner { font-weight: 700; color: #60a5fa; }
+
+        .score-pill {
+            flex-shrink: 0;
+            min-width: 58px;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 6px;
+            letter-spacing: 1px;
+        }
+        .score-vs       { background: #0f172a; color: #475569; border: 1px solid #334155; }
+        .score-live     { background: #7f1d1d; color: #fca5a5; }
+        .score-final    { background: #14532d; color: #4ade80; }
+        .score-final-plata { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+
+        /* Desktop: todo en una línea */
+        @media (min-width: 576px) {
+            .match-body { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
+            .match-meta { margin-bottom: 0; flex-shrink: 0; }
+            .match-teams { flex: 1; }
+        }
+
+        /* ── DIVISOR ── */
+        .campo-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: #fff;
+            background: #3b82f6;
+            border-radius: 6px;
+            padding: 5px 14px;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
 
         @media (max-width: 991px) {
-            .col-divider { border-right: none; border-bottom: 2px dashed #334155; padding-bottom: 2rem; margin-bottom: 2rem; }
+            .col-divider-lg { border-right: none; padding-bottom: 2rem; margin-bottom: 1rem; border-bottom: 1px dashed #334155; }
+        }
+        @media (min-width: 992px) {
+            .col-divider-lg { border-right: 1px dashed #334155; }
+        }
+
+        /* ── ELIMINATORIAS ── */
+        .elim-fase-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #64748b;
+            padding: 4px 10px;
+            background: rgba(0,0,0,0.25);
+            border-bottom: 1px solid #334155;
+        }
+
+        /* ── GOLEADORES ── */
+        .gol-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 0;
+            border-bottom: 1px solid #1e293b;
+        }
+        .gol-row:last-child { border-bottom: none; }
+        .gol-pos { min-width: 22px; font-size: 0.85rem; }
+        .gol-info { flex: 1; min-width: 0; }
+        .gol-equipo { font-size: 0.75rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .gol-count { font-weight: 800; color: #4ade80; font-size: 0.9rem; }
+
+        /* ── FOOTER ── */
+        .footer-bar {
+            text-align: center;
+            padding: 24px 16px;
+            color: #475569;
+            font-size: 0.72rem;
         }
     </style>
 </head>
 <body>
-    <!-- HEADER PÚBLICO -->
+
+    <!-- HEADER -->
     <div class="header-pub">
-        <div class="container-fluid px-4">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <h1 class="fw-bold mb-0 fs-3 text-white">⚽ {{ t.nombre }}</h1>
-                    <span class="text-muted-custom small">Información en directo</span>
-                </div>
-                <div class="text-end">
-                    <span class="live-dot"></span>
-                    <span class="text-muted-custom small">Actualización automática</span>
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <h1>⚽ {{ t.nombre }}</h1>
+                <div style="font-size:0.65rem; color:#64748b; margin-top:1px;">
+                    <span class="live-dot me-1"></span>En directo
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="container-fluid py-2 px-4">
+    <div class="px-3 py-3">
 
-        <!-- TABLAS DE CLASIFICACIÓN -->
-        <h2 class="section-title text-info">Clasificación</h2>
-        <div class="row g-3 mb-5">
+        <!-- ═══ CLASIFICACIÓN ═══ -->
+        <div class="mb-1"><span class="section-title">Clasificación</span></div>
+        <div class="row g-2 mb-4">
             {% for g in t.grupos %}
-                {% if "Grupo" in g.nombre and tablas[g.id] %}
-                <div class="col-md-3 col-sm-6">
-                    <div class="card shadow h-100">
-                        <div class="card-header py-2 text-center fw-bold fs-6
-                            {% if 'A' in g.nombre %}bg-grupo-a{% elif 'B' in g.nombre %}bg-grupo-b{% elif 'C' in g.nombre %}bg-grupo-c{% else %}bg-grupo-d{% endif %}">
-                            {{ g.nombre }}
-                        </div>
-                        <div class="card-body p-0">
-                            <table class="table table-sm mb-0" style="font-size: 0.85rem;">
-                                <thead>
-                                    <tr class="text-muted-custom border-bottom border-secondary">
-                                        <th class="ps-2 py-2">#</th>
-                                        <th class="py-2">Equipo</th>
-                                        <th class="text-center py-2">Pts</th>
-                                        <th class="text-center py-2">PJ</th>
-                                        <th class="text-center py-2">GF</th>
-                                        <th class="text-center py-2">GC</th>
-                                        <th class="text-center py-2">DG</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for equipo, s in tablas[g.id] %}
-                                    <tr class="border-bottom border-secondary {% if loop.index <= 2 %}pasa-ronda{% endif %}">
-                                        <td class="ps-2 text-center fw-bold {% if loop.index == 1 %}text-warning{% elif loop.index == 2 %}text-info{% endif %}">{{ loop.index }}</td>
-                                        <td class="{% if loop.index <= 2 %}fw-bold{% endif %} text-truncate" style="max-width: 100px;">
-                                            {{ equipo }}
-                                            {% if loop.index <= 2 %}<span class="text-success ms-1" title="Pasa a eliminatorias" style="font-size:0.65rem;">✓</span>{% endif %}
-                                        </td>
-                                        <td class="text-center fw-bold {% if loop.index <= 2 %}text-warning{% endif %}">{{ s.pts }}</td>
-                                        <td class="text-center text-muted-custom">{{ s.pj }}</td>
-                                        <td class="text-center text-success">{{ s.gf }}</td>
-                                        <td class="text-center text-danger">{{ s.gc }}</td>
-                                        <td class="text-center {% if s.gf - s.gc > 0 %}text-success{% elif s.gf - s.gc < 0 %}text-danger{% endif %}">
-                                            {{ '%+d' % (s.gf - s.gc) if s.gf != s.gc else '0' }}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="card-footer p-2 text-center" style="background: transparent; border-top: 1px solid #334155;">
-                            <a href="/publico/{{ t.id }}/grupo/{{ g.id }}" class="btn btn-sm btn-outline-secondary w-100" style="font-size: 0.78rem;">
-                                Ver resultados de este grupo
-                            </a>
-                        </div>
+            {% if "Grupo" in g.nombre and tablas[g.id] %}
+            <div class="col-6 col-md-3 tabla-card">
+                <div class="card h-100" style="border-radius:12px;">
+                    <div class="card-header text-center
+                        {% if 'A' in g.nombre %}bg-grupo-a{% elif 'B' in g.nombre %}bg-grupo-b{% elif 'C' in g.nombre %}bg-grupo-c{% else %}bg-grupo-d{% endif %}">
+                        {{ g.nombre }}
                     </div>
+                    <div class="card-body p-0">
+                        <table class="table mb-0" style="border-collapse:collapse;">
+                            <thead>
+                                <tr style="border-bottom:1px solid #334155;">
+                                    <th class="ps-2">#</th>
+                                    <th>Equipo</th>
+                                    <th class="text-center">Pts</th>
+                                    <th class="text-center d-none d-sm-table-cell">PJ</th>
+                                    <th class="text-center d-none d-sm-table-cell">GF</th>
+                                    <th class="text-center d-none d-sm-table-cell">GC</th>
+                                    <th class="text-center">DG</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for equipo, s in tablas[g.id] %}
+                                <tr style="border-bottom:1px solid #1e293b;" class="{% if loop.index <= 2 %}pasa-ronda{% endif %}">
+                                    <td class="ps-2 text-center fw-bold {% if loop.index==1 %}text-warning{% elif loop.index==2 %}text-info{% endif %}">{{ loop.index }}</td>
+                                    <td class="equipo-cell {% if loop.index<=2 %}fw-bold{% endif %}">
+                                        {{ equipo }}{% if loop.index<=2 %}<span class="text-success ms-1" style="font-size:.6rem">✓</span>{% endif %}
+                                    </td>
+                                    <td class="text-center fw-bold {% if loop.index<=2 %}text-warning{% endif %}">{{ s.pts }}</td>
+                                    <td class="text-center text-muted-custom d-none d-sm-table-cell">{{ s.pj }}</td>
+                                    <td class="text-center text-success d-none d-sm-table-cell">{{ s.gf }}</td>
+                                    <td class="text-center text-danger d-none d-sm-table-cell">{{ s.gc }}</td>
+                                    <td class="text-center {% if s.gf-s.gc>0 %}text-success{% elif s.gf-s.gc<0 %}text-danger{% endif %}">
+                                        {{ '%+d'%(s.gf-s.gc) if s.gf!=s.gc else '0' }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="/publico/{{ t.id }}/grupo/{{ g.id }}" class="btn-ver-grupo">
+                        Ver partidos del grupo →
+                    </a>
                 </div>
-                {% endif %}
+            </div>
+            {% endif %}
             {% endfor %}
         </div>
 
-        <!-- CALENDARIO FASE DE GRUPOS -->
-        <h2 class="section-title text-info">Resultados - Fase de Grupos</h2>
-        <div class="row mb-5">
+        <!-- ═══ FASE DE GRUPOS – por campos ═══ -->
+        <div class="mb-1"><span class="section-title">Resultados – Fase de grupos</span></div>
+        <div class="row g-0 mb-4">
             <!-- CAMPO 1 -->
-            <div class="col-lg-6 col-divider pe-lg-4">
-                <div class="text-center mb-4">
-                    <span class="badge badge-campo px-4 py-2 fs-6">CAMPO 1</span>
-                </div>
-
+            <div class="col-lg-6 col-divider-lg pe-lg-3 mb-3 mb-lg-0">
+                <div class="mb-2"><span class="campo-label">Campo 1</span></div>
                 {% set lista_c1 = [] %}
                 {% for g in t.grupos if "Grupo" in g.nombre %}
                     {% for p in g.partidos if p.numero_campo == 1 %}
-                        {% set hora_sort = p.hora if p.hora|length > 4 else "0" ~ p.hora %}
-                        {% set _ = lista_c1.append({'p': p, 'g': g, 'h': hora_sort}) or "" %}
+                        {% set hs = p.hora if p.hora|length > 4 else "0"~p.hora %}
+                        {% set _ = lista_c1.append({'p':p,'g':g,'h':hs}) or "" %}
                     {% endfor %}
                 {% endfor %}
-
                 {% for item in lista_c1|sort(attribute='h') %}
-                {% set p = item.p %}
-                {% set g = item.g %}
-                <div class="card match-card mb-2 {% if p.en_curso %}en-curso{% endif %} shadow-sm">
-                    <div class="card-body p-2 d-flex align-items-center gap-2">
-                        <div class="fw-bold text-warning" style="min-width: 48px; font-size: 0.9rem;">{{ p.hora }}</div>
-                        <div class="badge {% if 'A' in g.nombre %}bg-grupo-a{% elif 'B' in g.nombre %}bg-grupo-b{% elif 'C' in g.nombre %}bg-grupo-c{% else %}bg-grupo-d{% endif %}" style="min-width: 28px; font-size: 0.75rem;">
-                            {{ g.nombre.split()[-1] }}
+                {% set p = item.p %}{% set g = item.g %}
+                <div class="card match-card {% if p.en_curso %}en-curso{% endif %}">
+                    <div class="match-body">
+                        <div class="match-meta">
+                            <span class="hora">{{ p.hora }}</span>
+                            <span class="grupo-badge {% if 'A' in g.nombre %}bg-grupo-a{% elif 'B' in g.nombre %}bg-grupo-b{% elif 'C' in g.nombre %}bg-grupo-c{% else %}bg-grupo-d{% endif %}">
+                                {{ g.nombre.split()[-1] }}
+                            </span>
+                            <span class="spacer"></span>
+                            <span class="match-estado">
+                                {% if p.en_curso %}<span class="badge-live">EN VIVO</span>
+                                {% elif p.finalizado %}<span class="text-success">FINAL</span>
+                                {% else %}<span class="text-muted-custom">Pendiente</span>{% endif %}
+                            </span>
                         </div>
-                        <div class="flex-grow-1 d-flex align-items-center">
-                            <span class="text-end text-truncate flex-grow-1" style="flex-basis: 0; font-size: 0.9rem;">{{ p.equipo1 }}</span>
-                            <div class="score-container mx-2">
-                                <span class="badge {% if p.en_curso %}bg-danger{% elif p.finalizado %}bg-success{% else %}bg-dark{% endif %} fs-6 w-100 py-2">
-                                    {% if p.finalizado or p.en_curso %}{{ p.goles1 }} - {{ p.goles2 }}{% else %}vs{% endif %}
-                                </span>
-                            </div>
-                            <span class="text-start text-truncate flex-grow-1" style="flex-basis: 0; font-size: 0.9rem;">{{ p.equipo2 }}</span>
-                        </div>
-                        <div class="ms-1" style="min-width: 60px; text-align: right;">
-                            {% if p.en_curso %}
-                                <span class="badge-live">EN VIVO</span>
-                            {% elif p.finalizado %}
-                                <span class="text-success small fw-bold">FINAL</span>
-                                {% if p.ganador_penaltis %}
-                                    <br><span class="text-warning" style="font-size: 0.65rem;">(pen)</span>
-                                {% endif %}
-                            {% else %}
-                                <span class="text-muted-custom small">Pendiente</span>
-                            {% endif %}
+                        <div class="match-teams">
+                            <span class="team-name left {% if p.finalizado and p.goles1>p.goles2 %}winner{% endif %}">{{ p.equipo1 }}</span>
+                            <span class="score-pill {% if p.en_curso %}score-live{% elif p.finalizado %}score-final{% else %}score-vs{% endif %}">
+                                {% if p.finalizado or p.en_curso %}{{ p.goles1 }}&thinsp;-&thinsp;{{ p.goles2 }}{% else %}vs{% endif %}
+                            </span>
+                            <span class="team-name right {% if p.finalizado and p.goles2>p.goles1 %}winner{% endif %}">{{ p.equipo2 }}</span>
                         </div>
                     </div>
                 </div>
@@ -219,48 +346,37 @@
             </div>
 
             <!-- CAMPO 2 -->
-            <div class="col-lg-6 ps-lg-4">
-                <div class="text-center mb-4">
-                    <span class="badge badge-campo px-4 py-2 fs-6">CAMPO 2</span>
-                </div>
-
+            <div class="col-lg-6 ps-lg-3">
+                <div class="mb-2"><span class="campo-label">Campo 2</span></div>
                 {% set lista_c2 = [] %}
                 {% for g in t.grupos if "Grupo" in g.nombre %}
                     {% for p in g.partidos if p.numero_campo == 2 %}
-                        {% set hora_sort = p.hora if p.hora|length > 4 else "0" ~ p.hora %}
-                        {% set _ = lista_c2.append({'p': p, 'g': g, 'h': hora_sort}) or "" %}
+                        {% set hs = p.hora if p.hora|length > 4 else "0"~p.hora %}
+                        {% set _ = lista_c2.append({'p':p,'g':g,'h':hs}) or "" %}
                     {% endfor %}
                 {% endfor %}
-
                 {% for item in lista_c2|sort(attribute='h') %}
-                {% set p = item.p %}
-                {% set g = item.g %}
-                <div class="card match-card mb-2 {% if p.en_curso %}en-curso{% endif %} shadow-sm">
-                    <div class="card-body p-2 d-flex align-items-center gap-2">
-                        <div class="fw-bold text-warning" style="min-width: 48px; font-size: 0.9rem;">{{ p.hora }}</div>
-                        <div class="badge {% if 'A' in g.nombre %}bg-grupo-a{% elif 'B' in g.nombre %}bg-grupo-b{% elif 'C' in g.nombre %}bg-grupo-c{% else %}bg-grupo-d{% endif %}" style="min-width: 28px; font-size: 0.75rem;">
-                            {{ g.nombre.split()[-1] }}
+                {% set p = item.p %}{% set g = item.g %}
+                <div class="card match-card {% if p.en_curso %}en-curso{% endif %}">
+                    <div class="match-body">
+                        <div class="match-meta">
+                            <span class="hora">{{ p.hora }}</span>
+                            <span class="grupo-badge {% if 'A' in g.nombre %}bg-grupo-a{% elif 'B' in g.nombre %}bg-grupo-b{% elif 'C' in g.nombre %}bg-grupo-c{% else %}bg-grupo-d{% endif %}">
+                                {{ g.nombre.split()[-1] }}
+                            </span>
+                            <span class="spacer"></span>
+                            <span class="match-estado">
+                                {% if p.en_curso %}<span class="badge-live">EN VIVO</span>
+                                {% elif p.finalizado %}<span class="text-success">FINAL</span>
+                                {% else %}<span class="text-muted-custom">Pendiente</span>{% endif %}
+                            </span>
                         </div>
-                        <div class="flex-grow-1 d-flex align-items-center">
-                            <span class="text-end text-truncate flex-grow-1" style="flex-basis: 0; font-size: 0.9rem;">{{ p.equipo1 }}</span>
-                            <div class="score-container mx-2">
-                                <span class="badge {% if p.en_curso %}bg-danger{% elif p.finalizado %}bg-success{% else %}bg-dark{% endif %} fs-6 w-100 py-2">
-                                    {% if p.finalizado or p.en_curso %}{{ p.goles1 }} - {{ p.goles2 }}{% else %}vs{% endif %}
-                                </span>
-                            </div>
-                            <span class="text-start text-truncate flex-grow-1" style="flex-basis: 0; font-size: 0.9rem;">{{ p.equipo2 }}</span>
-                        </div>
-                        <div class="ms-1" style="min-width: 60px; text-align: right;">
-                            {% if p.en_curso %}
-                                <span class="badge-live">EN VIVO</span>
-                            {% elif p.finalizado %}
-                                <span class="text-success small fw-bold">FINAL</span>
-                                {% if p.ganador_penaltis %}
-                                    <br><span class="text-warning" style="font-size: 0.65rem;">(pen)</span>
-                                {% endif %}
-                            {% else %}
-                                <span class="text-muted-custom small">Pendiente</span>
-                            {% endif %}
+                        <div class="match-teams">
+                            <span class="team-name left {% if p.finalizado and p.goles1>p.goles2 %}winner{% endif %}">{{ p.equipo1 }}</span>
+                            <span class="score-pill {% if p.en_curso %}score-live{% elif p.finalizado %}score-final{% else %}score-vs{% endif %}">
+                                {% if p.finalizado or p.en_curso %}{{ p.goles1 }}&thinsp;-&thinsp;{{ p.goles2 }}{% else %}vs{% endif %}
+                            </span>
+                            <span class="team-name right {% if p.finalizado and p.goles2>p.goles1 %}winner{% endif %}">{{ p.equipo2 }}</span>
                         </div>
                     </div>
                 </div>
@@ -268,148 +384,131 @@
             </div>
         </div>
 
-        <!-- FASES FINALES -->
-        <h2 class="section-title text-warning">Fases Eliminatorias</h2>
-        <div class="row">
+        <!-- ═══ FASES ELIMINATORIAS ═══ -->
+        <div class="mb-1"><span class="section-title gold">Fases Eliminatorias</span></div>
+        <div class="row g-0">
             <!-- FASE ORO -->
-            <div class="col-lg-6 col-divider pe-lg-4">
-                <div class="text-center mb-4">
-                    <span class="badge badge-oro px-4 py-2 fs-6 shadow">FASE ORO - TÍTULO</span>
+            <div class="col-lg-6 col-divider-lg pe-lg-3 mb-4 mb-lg-0">
+                <div class="mb-2 text-center">
+                    <span class="badge badge-oro px-3 py-1" style="border-radius:8px; font-size:0.8rem;">FASE ORO – TÍTULO</span>
                 </div>
-                {% for fase in ["Eliminatorias Título", "Semifinales Título", "Final Título"] %}
-                    {% for g in t.grupos if g.nombre == fase %}
-                        <div class="mb-4">
-                            <h6 class="text-info fw-bold mb-3 border-bottom border-dark pb-1">{{ g.nombre|upper }}</h6>
-                            {% for p in g.partidos %}
-                            <div class="card mb-2 border-0 shadow-sm {% if p.en_curso %}match-card en-curso{% endif %}">
-                                <div class="card-body p-3 d-flex align-items-center">
-                                    <div class="small text-warning fw-bold me-3" style="min-width: 45px;">{{ p.hora }}</div>
-                                    <div class="flex-grow-1 d-flex align-items-center justify-content-between">
-                                        <div class="text-end flex-grow-1 {% if p.finalizado and (p.goles1 > p.goles2 or p.ganador_penaltis == p.equipo1) %}clasificado-bold{% endif %}" style="flex-basis: 0;">
-                                            {{ p.equipo1 or '...' }}
-                                            {% if p.finalizado and p.ganador_penaltis == p.equipo1 and p.goles1 == p.goles2 %}
-                                                <small class="penaltis-tag">(PEN)</small>
-                                            {% endif %}
-                                        </div>
-                                        <div class="score-container mx-3">
-                                            <span class="badge {% if p.en_curso %}bg-danger{% elif p.finalizado %}bg-warning text-dark{% else %}bg-dark{% endif %} fs-5 w-100 py-2">
-                                                {% if p.finalizado or p.en_curso %}{{ p.goles1 }} - {{ p.goles2 }}{% else %}vs{% endif %}
-                                            </span>
-                                        </div>
-                                        <div class="text-start flex-grow-1 {% if p.finalizado and (p.goles2 > p.goles1 or p.ganador_penaltis == p.equipo2) %}clasificado-bold{% endif %}" style="flex-basis: 0;">
-                                            {{ p.equipo2 or '...' }}
-                                            {% if p.finalizado and p.ganador_penaltis == p.equipo2 and p.goles1 == p.goles2 %}
-                                                <small class="penaltis-tag">(PEN)</small>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <div class="ms-3" style="min-width: 60px; text-align: right;">
-                                        {% if p.en_curso %}
-                                            <span class="badge-live">EN VIVO</span>
-                                        {% elif p.finalizado %}
-                                            <span class="text-success small fw-bold">FINAL</span>
-                                        {% else %}
-                                            <span class="text-muted-custom small">Pendiente</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
+                {% for fase in ["Eliminatorias Título","Semifinales Título","Final Título"] %}
+                {% for g in t.grupos if g.nombre == fase %}
+                <div class="card mb-3" style="overflow:hidden;">
+                    <div class="elim-fase-label">{{ g.nombre }}</div>
+                    {% for p in g.partidos %}
+                    {% set e1g = p.finalizado and (p.goles1>p.goles2 or p.ganador_penaltis==p.equipo1) %}
+                    {% set e2g = p.finalizado and (p.goles2>p.goles1 or p.ganador_penaltis==p.equipo2) %}
+                    <div class="match-card {% if p.en_curso %}en-curso{% endif %}" style="margin:0; border-radius:0; border-left:0;">
+                        <div class="match-body" style="border-bottom:1px solid #1e293b;">
+                            <div class="match-meta">
+                                <span class="hora">{{ p.hora }}</span>
+                                <span class="spacer"></span>
+                                <span class="match-estado">
+                                    {% if p.en_curso %}<span class="badge-live">EN VIVO</span>
+                                    {% elif p.finalizado %}<span class="text-success">FINAL</span>
+                                    {% else %}<span class="text-muted-custom">Pendiente</span>{% endif %}
+                                </span>
                             </div>
-                            {% endfor %}
+                            <div class="match-teams">
+                                <span class="team-name left {% if e1g %}winner{% endif %}">
+                                    {{ p.equipo1 or '…' }}
+                                    {% if p.ganador_penaltis==p.equipo1 and p.goles1==p.goles2 %}<span style="font-size:.6rem;color:#f59e0b;"> PEN</span>{% endif %}
+                                </span>
+                                <span class="score-pill {% if p.en_curso %}score-live{% elif p.finalizado %}score-final{% else %}score-vs{% endif %}">
+                                    {% if p.finalizado or p.en_curso %}{{ p.goles1 }}&thinsp;-&thinsp;{{ p.goles2 }}{% else %}vs{% endif %}
+                                </span>
+                                <span class="team-name right {% if e2g %}winner{% endif %}">
+                                    {{ p.equipo2 or '…' }}
+                                    {% if p.ganador_penaltis==p.equipo2 and p.goles1==p.goles2 %}<span style="font-size:.6rem;color:#f59e0b;"> PEN</span>{% endif %}
+                                </span>
+                            </div>
                         </div>
+                    </div>
                     {% endfor %}
+                </div>
+                {% endfor %}
                 {% endfor %}
             </div>
 
             <!-- FASE PLATA -->
-            <div class="col-lg-6 ps-lg-4">
-                <div class="text-center mb-4">
-                    <span class="badge badge-plata px-4 py-2 fs-6 shadow">FASE PLATA - CONSOLACIÓN</span>
+            <div class="col-lg-6 ps-lg-3 mb-4">
+                <div class="mb-2 text-center">
+                    <span class="badge badge-plata px-3 py-1" style="border-radius:8px; font-size:0.8rem;">FASE PLATA – CONSOLACIÓN</span>
                 </div>
-                {% for fase in ["Eliminatorias Consolación", "Semifinales Consolación", "Final Consolación"] %}
-                    {% for g in t.grupos if g.nombre == fase %}
-                        <div class="mb-4">
-                            <h6 class="text-secondary fw-bold mb-3 border-bottom border-dark pb-1">{{ g.nombre|upper }}</h6>
-                            {% for p in g.partidos %}
-                            <div class="card mb-2 border-0 shadow-sm {% if p.en_curso %}match-card en-curso{% endif %}">
-                                <div class="card-body p-3 d-flex align-items-center">
-                                    <div class="small text-warning fw-bold me-3" style="min-width: 45px;">{{ p.hora }}</div>
-                                    <div class="flex-grow-1 d-flex align-items-center justify-content-between">
-                                        <div class="text-end flex-grow-1 {% if p.finalizado and (p.goles1 > p.goles2 or p.ganador_penaltis == p.equipo1) %}clasificado-bold{% endif %}" style="flex-basis: 0;">
-                                            {{ p.equipo1 or '...' }}
-                                            {% if p.finalizado and p.ganador_penaltis == p.equipo1 and p.goles1 == p.goles2 %}
-                                                <small class="penaltis-tag">(PEN)</small>
-                                            {% endif %}
-                                        </div>
-                                        <div class="score-container mx-3">
-                                            <span class="badge {% if p.en_curso %}bg-danger{% elif p.finalizado %}bg-secondary{% else %}bg-dark{% endif %} fs-5 w-100 py-2">
-                                                {% if p.finalizado or p.en_curso %}{{ p.goles1 }} - {{ p.goles2 }}{% else %}vs{% endif %}
-                                            </span>
-                                        </div>
-                                        <div class="text-start flex-grow-1 {% if p.finalizado and (p.goles2 > p.goles1 or p.ganador_penaltis == p.equipo2) %}clasificado-bold{% endif %}" style="flex-basis: 0;">
-                                            {{ p.equipo2 or '...' }}
-                                            {% if p.finalizado and p.ganador_penaltis == p.equipo2 and p.goles1 == p.goles2 %}
-                                                <small class="penaltis-tag">(PEN)</small>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <div class="ms-3" style="min-width: 60px; text-align: right;">
-                                        {% if p.en_curso %}
-                                            <span class="badge-live">EN VIVO</span>
-                                        {% elif p.finalizado %}
-                                            <span class="text-success small fw-bold">FINAL</span>
-                                        {% else %}
-                                            <span class="text-muted-custom small">Pendiente</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
+                {% for fase in ["Eliminatorias Consolación","Semifinales Consolación","Final Consolación"] %}
+                {% for g in t.grupos if g.nombre == fase %}
+                <div class="card mb-3" style="overflow:hidden;">
+                    <div class="elim-fase-label">{{ g.nombre }}</div>
+                    {% for p in g.partidos %}
+                    {% set e1g = p.finalizado and (p.goles1>p.goles2 or p.ganador_penaltis==p.equipo1) %}
+                    {% set e2g = p.finalizado and (p.goles2>p.goles1 or p.ganador_penaltis==p.equipo2) %}
+                    <div class="match-card {% if p.en_curso %}en-curso{% endif %}" style="margin:0; border-radius:0; border-left:0;">
+                        <div class="match-body" style="border-bottom:1px solid #1e293b;">
+                            <div class="match-meta">
+                                <span class="hora">{{ p.hora }}</span>
+                                <span class="spacer"></span>
+                                <span class="match-estado">
+                                    {% if p.en_curso %}<span class="badge-live">EN VIVO</span>
+                                    {% elif p.finalizado %}<span class="text-success">FINAL</span>
+                                    {% else %}<span class="text-muted-custom">Pendiente</span>{% endif %}
+                                </span>
                             </div>
-                            {% endfor %}
+                            <div class="match-teams">
+                                <span class="team-name left {% if e1g %}winner{% endif %}">
+                                    {{ p.equipo1 or '…' }}
+                                    {% if p.ganador_penaltis==p.equipo1 and p.goles1==p.goles2 %}<span style="font-size:.6rem;color:#f59e0b;"> PEN</span>{% endif %}
+                                </span>
+                                <span class="score-pill {% if p.en_curso %}score-live{% elif p.finalizado %}score-final-plata{% else %}score-vs{% endif %}">
+                                    {% if p.finalizado or p.en_curso %}{{ p.goles1 }}&thinsp;-&thinsp;{{ p.goles2 }}{% else %}vs{% endif %}
+                                </span>
+                                <span class="team-name right {% if e2g %}winner{% endif %}">
+                                    {{ p.equipo2 or '…' }}
+                                    {% if p.ganador_penaltis==p.equipo2 and p.goles1==p.goles2 %}<span style="font-size:.6rem;color:#f59e0b;"> PEN</span>{% endif %}
+                                </span>
+                            </div>
                         </div>
+                    </div>
                     {% endfor %}
+                </div>
+                {% endfor %}
                 {% endfor %}
             </div>
         </div>
 
-        <!-- GOLEADORES -->
+        <!-- ═══ GOLEADORES ═══ -->
         {% if top %}
-        <div class="row mt-5">
-            <div class="col-12">
-                <h2 class="section-title text-success">Pichichi del Torneo</h2>
-                <div class="card">
-                    <div class="card-body">
-                        <div class="row">
-                            {% for g in top %}
-                            <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
-                                <div class="d-flex align-items-center border-bottom border-secondary pb-2">
-                                    <span class="fw-bold me-2 {% if loop.index == 1 %}gol-top1{% elif loop.index == 2 %}gol-top2{% elif loop.index == 3 %}gol-top3{% else %}text-muted-custom{% endif %}" style="min-width: 24px;">
-                                        {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
-                                    </span>
-                                    <span class="flex-grow-1 text-truncate">
-                                        <span class="badge bg-secondary me-1">#{{ g.dorsal }}</span>
-                                        <span class="small">{{ g.equipo }}</span>
-                                    </span>
-                                    <span class="fw-bold text-success ms-2">{{ g.goles }}G</span>
+        <div class="mb-1"><span class="section-title green">Pichichi</span></div>
+        <div class="card mb-4">
+            <div class="card-body py-2 px-3">
+                <div class="row g-0">
+                    {% for g in top %}
+                    <div class="col-6 col-md-4 col-lg-3 px-1">
+                        <div class="gol-row">
+                            <span class="gol-pos">
+                                {% if loop.index==1 %}🥇{% elif loop.index==2 %}🥈{% elif loop.index==3 %}🥉{% else %}<span class="text-muted-custom" style="font-size:.8rem">{{ loop.index }}</span>{% endif %}
+                            </span>
+                            <div class="gol-info">
+                                <div style="font-size:.82rem; font-weight:600;">
+                                    <span class="badge bg-secondary me-1" style="font-size:.65rem;">#{{ g.dorsal }}</span>
                                 </div>
+                                <div class="gol-equipo">{{ g.equipo }}</div>
                             </div>
-                            {% endfor %}
+                            <span class="gol-count">{{ g.goles }}G</span>
                         </div>
                     </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
         {% endif %}
 
-        <!-- Footer -->
-        <div class="text-center mt-5 pb-4">
-            <p class="text-muted-custom small">
-                Página actualizada automáticamente cada 30 segundos
-            </p>
-        </div>
-
     </div>
 
-    <script>
-        setTimeout(() => { location.reload(); }, 30000);
-    </script>
+    <div class="footer-bar">
+        Actualización automática cada 30 s
+    </div>
+
+    <script>setTimeout(()=>location.reload(), 30000);</script>
 </body>
 </html>
