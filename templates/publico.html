@@ -245,22 +245,37 @@
 
     <script>
         function actualizarReloj(p, elementId) {
-            if (!p || p.esta_pausado) {
-                if (p) {
-                    const totalSecs = p.segundos_transcurridos;
-                    const m = Math.floor(totalSecs / 60).toString().padStart(2, '0');
-                    const s = (totalSecs % 60).toString().padStart(2, '0');
-                    document.getElementById(elementId).innerText = `${m}:${s}`;
-                } else {
-                    document.getElementById(elementId).innerText = "--:--";
-                }
+            const el = document.getElementById(elementId);
+            if (!p) {
+                el.innerText = "--:--";
+                el.style.color = "";
+                el.style.fontSize = "";
+                el.style.letterSpacing = "";
+                return;
+            }
+            if (p.en_descanso) {
+                el.innerText = "DESCANSO";
+                el.style.color = "#60a5fa";
+                el.style.fontSize = "clamp(1.5rem, 5vh, 2.8rem)";
+                el.style.letterSpacing = "3px";
+                return;
+            }
+            // Restaurar estilos normales
+            el.style.color = "";
+            el.style.fontSize = "";
+            el.style.letterSpacing = "";
+            if (p.esta_pausado) {
+                const totalSecs = p.segundos_transcurridos;
+                const m = Math.floor(totalSecs / 60).toString().padStart(2, '0');
+                const s = (totalSecs % 60).toString().padStart(2, '0');
+                el.innerText = `${m}:${s}`;
                 return;
             }
             const ahora = Math.floor(Date.now() / 1000);
             const totalSecs = p.segundos_transcurridos + (ahora - p.inicio_ts);
             const m = Math.floor(totalSecs / 60).toString().padStart(2, '0');
             const s = (totalSecs % 60).toString().padStart(2, '0');
-            document.getElementById(elementId).innerText = `${m}:${s}`;
+            el.innerText = `${m}:${s}`;
         }
 
         async function fetchPartidos() {

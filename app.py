@@ -2,6 +2,7 @@ import os
 import time
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 
 app = Flask(__name__)
 
@@ -41,6 +42,7 @@ class Partido(db.Model):
     inicio_ts = db.Column(db.Integer, default=0)
     segundos_transcurridos = db.Column(db.Integer, default=0)
     esta_pausado = db.Column(db.Boolean, default=True)
+    en_descanso = db.Column(db.Boolean, default=False)
     eventos = db.relationship('EventoGol', backref='partido', lazy=True, cascade="all, delete-orphan")
 
 class EventoGol(db.Model):
@@ -85,6 +87,13 @@ CONFIG_CRUCES_DEFAULT = [
 
 with app.app_context():
     db.create_all()
+    # Migración automática: añadir columna en_descanso si no existe (BD ya creadas)
+    with db.engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE partido ADD COLUMN en_descanso BOOLEAN DEFAULT 0"))
+            conn.commit()
+        except Exception:
+            pass  # La columna ya existe
 
 # --- LÓGICA DE PROCESAMIENTO ---
 
@@ -428,8 +437,9 @@ def actualizar_timer(p_id):
     p = Partido.query.get_or_404(p_id)
     p.segundos_transcurridos = int(request.form.get('segundos', 0))
     p.esta_pausado = request.form.get('pausado') == 'true'
+    p.en_descanso = request.form.get('en_descanso') == 'true'
     p.inicio_ts = int(time.time()) if not p.esta_pausado else 0
-    p.en_curso = not p.esta_pausado
+    p.en_curso = True  # sigue en curso aunque esté pausado o en descanso
     db.session.commit()
     return jsonify({"status": "ok"})
 
@@ -441,7 +451,7 @@ def api_partidos():
         proximo = Partido.query.filter_by(numero_campo=i, en_curso=False, finalizado=False).order_by(Partido.hora).first()
         ultimo = Partido.query.filter_by(numero_campo=i, finalizado=True).order_by(Partido.id.desc()).first()
         campos[f'campo_{i}'] = {
-            "actual": {"equipo1": actual.equipo1, "equipo2": actual.equipo2, "goles1": actual.goles1, "goles2": actual.goles2, "segundos_transcurridos": actual.segundos_transcurridos, "inicio_ts": actual.inicio_ts, "esta_pausado": actual.esta_pausado} if actual else None,
+            "actual": {"equipo1": actual.equipo1, "equipo2": actual.equipo2, "goles1": actual.goles1, "goles2": actual.goles2, "segundos_transcurridos": actual.segundos_transcurridos, "inicio_ts": actual.inicio_ts, "esta_pausado": actual.esta_pausado, "en_descanso": actual.en_descanso} if actual else None,
             "proximo": {"equipo1": proximo.equipo1, "equipo2": proximo.equipo2, "hora": proximo.hora} if proximo else None,
             "ultimo_finalizado": {"equipo1": ultimo.equipo1, "equipo2": ultimo.equipo2, "goles1": ultimo.goles1, "goles2": ultimo.goles2} if ultimo else None
         }
