@@ -57,6 +57,31 @@ class Goleador(db.Model):
     goles = db.Column(db.Integer, default=0)
     torneo_id = db.Column(db.Integer, db.ForeignKey('torneo.id'), nullable=False)
 
+class ConfigCruce(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    torneo_id = db.Column(db.Integer, db.ForeignKey('torneo.id'), nullable=False)
+    hora = db.Column(db.String(10))
+    numero_campo = db.Column(db.Integer)
+    grupo_letra_1 = db.Column(db.String(5))
+    posicion_1 = db.Column(db.Integer)  # 1-indexed (1=1º, 2=2º, ...)
+    grupo_letra_2 = db.Column(db.String(5))
+    posicion_2 = db.Column(db.Integer)  # 1-indexed
+
+
+# Cruces por defecto para formato estándar F8 (4 grupos, 2 campos)
+CONFIG_CRUCES_DEFAULT = [
+    # Campo 1: Título (Oro)
+    {"hora": "15:00", "campo": 1, "g1": "A", "p1": 0, "g2": "B", "p2": 1},
+    {"hora": "15:25", "campo": 1, "g1": "B", "p1": 0, "g2": "A", "p2": 1},
+    {"hora": "15:50", "campo": 1, "g1": "C", "p1": 0, "g2": "D", "p2": 1},
+    {"hora": "16:15", "campo": 1, "g1": "D", "p1": 0, "g2": "C", "p2": 1},
+    # Campo 2: Consolación (Plata)
+    {"hora": "15:00", "campo": 2, "g1": "A", "p1": 2, "g2": "B", "p2": 3},
+    {"hora": "15:25", "campo": 2, "g1": "B", "p1": 2, "g2": "A", "p2": 3},
+    {"hora": "15:50", "campo": 2, "g1": "C", "p1": 2, "g2": "D", "p2": 3},
+    {"hora": "16:15", "campo": 2, "g1": "D", "p1": 2, "g2": "C", "p2": 3},
+]
+
 
 with app.app_context():
     db.create_all()
@@ -94,8 +119,8 @@ def obtener_tablas(torneo_id):
 def actualizar_cruces_eliminatorias(torneo_id):
     tablas = obtener_tablas(torneo_id)
     grupos = Grupo.query.filter_by(torneo_id=torneo_id).all()
-    
-    mapa_letras = {} 
+
+    mapa_letras = {}
     for g in grupos:
         # Extraemos la letra del nombre "Grupo A", "Grupo B", etc.
         if g.nombre.startswith("Grupo "):
@@ -103,20 +128,19 @@ def actualizar_cruces_eliminatorias(torneo_id):
             if g.id in tablas:
                 mapa_letras[letra] = [equipo for equipo, stats in tablas[g.id]]
 
-    # CONFIGURACIÓN MAESTRA DE CRUCES
-    config_cruces = {
-        # Campo 1: Título (Oro)
-        ("15:00", 1): ("A", 0, "B", 1), 
-        ("15:25", 1): ("B", 0, "A", 1), 
-        ("15:50", 1): ("C", 0, "D", 1), 
-        ("16:15", 1): ("D", 0, "C", 1), 
-        
-        # Campo 2: Consolación (Plata)
-        ("15:00", 2): ("A", 2, "B", 3), 
-        ("15:25", 2): ("B", 2, "A", 3), 
-        ("15:50", 2): ("C", 2, "D", 3), 
-        ("16:15", 2): ("D", 2, "C", 3), 
-    }
+    # CONFIGURACIÓN DE CRUCES: leer desde BD, o usar defaults si no hay configuración guardada
+    registros = ConfigCruce.query.filter_by(torneo_id=torneo_id).all()
+    if registros:
+        # posicion_1/2 guardadas como 1-indexed → convertir a 0-indexed para acceder a listas
+        config_cruces = {
+            (r.hora, r.numero_campo): (r.grupo_letra_1, r.posicion_1 - 1, r.grupo_letra_2, r.posicion_2 - 1)
+            for r in registros
+        }
+    else:
+        config_cruces = {
+            (c["hora"], c["campo"]): (c["g1"], c["p1"], c["g2"], c["p2"])
+            for c in CONFIG_CRUCES_DEFAULT
+        }
 
     partidos_totales = Partido.query.join(Grupo).filter(Grupo.torneo_id == torneo_id).all()
 
@@ -226,8 +250,53 @@ def crear_torneo():
         nuevo_torneo = Torneo(nombre=nombre)
         db.session.add(nuevo_torneo)
         db.session.commit()
-        # Nota: Aquí podrías añadir lógica para crear grupos por defecto si lo deseas
     return redirect(url_for('index'))
+
+@app.route('/configurar_cruces/<int:torneo_id>', methods=['GET', 'POST'])
+def configurar_cruces(torneo_id):
+    torneo = Torneo.query.get_or_404(torneo_id)
+    if request.method == 'POST':
+        # Borrar configuración anterior de este torneo
+        ConfigCruce.query.filter_by(torneo_id=torneo_id).delete()
+        horas = request.form.getlist('hora[]')
+        campos = request.form.getlist('campo[]')
+        g1s = request.form.getlist('g1[]')
+        p1s = request.form.getlist('p1[]')
+        g2s = request.form.getlist('g2[]')
+        p2s = request.form.getlist('p2[]')
+        for h, c, g1, p1, g2, p2 in zip(horas, campos, g1s, p1s, g2s, p2s):
+            if h and c and g1 and p1 and g2 and p2:
+                db.session.add(ConfigCruce(
+                    torneo_id=torneo_id,
+                    hora=h.strip(),
+                    numero_campo=int(c),
+                    grupo_letra_1=g1.strip().upper(),
+                    posicion_1=int(p1),  # 1-indexed: 1=1º, 2=2º, etc.
+                    grupo_letra_2=g2.strip().upper(),
+                    posicion_2=int(p2),
+                ))
+        db.session.commit()
+        actualizar_cruces_eliminatorias(torneo_id)
+        return redirect(url_for('ver_torneo', t_id=torneo_id))
+
+    # GET: cargar configuración actual (de BD o defaults)
+    registros = ConfigCruce.query.filter_by(torneo_id=torneo_id).all()
+    if registros:
+        configs = registros
+    else:
+        # Mostrar defaults como objetos para el template (1-indexed para el usuario)
+        configs = [
+            type('obj', (object,), {
+                'hora': c['hora'],
+                'numero_campo': c['campo'],
+                'grupo_letra_1': c['g1'],
+                'posicion_1': c['p1'] + 1,
+                'grupo_letra_2': c['g2'],
+                'posicion_2': c['p2'] + 1,
+            })()
+            for c in CONFIG_CRUCES_DEFAULT
+        ]
+    return render_template('configurar_cruces.html', torneo=torneo, configs=configs)
 
 @app.route('/eliminar_gol/<int:evento_id>', methods=['POST'])
 def eliminar_gol(evento_id):

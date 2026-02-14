@@ -63,6 +63,10 @@
 <body>
     <div class="container-fluid py-5 px-4">
         <header class="text-center mb-5">
+            <div class="mb-3">
+                <a href="/" class="btn btn-outline-secondary btn-sm me-2">← Todos los torneos</a>
+                <a href="/configurar_cruces/{{ t.id }}" class="btn btn-outline-warning btn-sm">⚙️ Configurar Cruces Eliminatoria</a>
+            </div>
             <h1 class="display-4 fw-bold text-primary">{{ t.nombre }}</h1>
             <p class="lead text-muted-custom">Panel de Administración - Gestión de Resultados y Goleadores</p>
         </header>

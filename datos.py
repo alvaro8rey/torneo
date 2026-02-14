@@ -1,35 +1,47 @@
 from app import app, db, Torneo, Grupo, Partido, EventoGol, Goleador
-import os
+import sys
 
-def cargar():
+def cargar(nombre_torneo=None, reset=False):
+    """
+    Carga un torneo nuevo con la estructura estándar F8.
+    - nombre_torneo: nombre del torneo (se pregunta si no se pasa)
+    - reset: si True, borra TODOS los torneos antes de insertar (usar con precaución)
+    """
     with app.app_context():
-        try:
-            db.create_all()
-            # Limpiar datos previos para evitar duplicados o conflictos
-            EventoGol.query.delete()
-            Goleador.query.delete()
-            Partido.query.delete()
-            Grupo.query.delete()
-            Torneo.query.delete()
-            db.session.commit()
-            print("Tablas limpiadas correctamente.")
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error al limpiar las tablas: {e}")
-            return
+        db.create_all()
+
+        if reset:
+            try:
+                EventoGol.query.delete()
+                Goleador.query.delete()
+                Partido.query.delete()
+                Grupo.query.delete()
+                Torneo.query.delete()
+                db.session.commit()
+                print("Tablas limpiadas correctamente.")
+            except Exception as e:
+                db.session.rollback()
+                print(f"Error al limpiar las tablas: {e}")
+                return
+
+        if not nombre_torneo:
+            nombre_torneo = input("Nombre del torneo: ").strip()
+            if not nombre_torneo:
+                print("Nombre vacío. Operación cancelada.")
+                return
 
         # Crear el Torneo
-        t = Torneo(nombre="TORNEO CARNAVAL ALEVÍN F8 CATOIRA SD")
+        t = Torneo(nombre=nombre_torneo)
         db.session.add(t)
         db.session.commit()
+        print(f"Torneo '{t.nombre}' creado con ID={t.id}")
 
         # Configuración de Grupos y Equipos
-        # Mantenemos los nombres originales para que las plantillas los reconozcan
         grupos_data = {
-            "A": "CATOIRA S.D., CROCHA CF, BARRO CF, XUVENTU AGUIÑO",
-            "B": "CALDAS CF, RIVEIRA CF, CD ROIS, PORTONOVO SD",
-            "C": "AROSA SC, EFM BOIRO, AT CUNTIS CF, VILAGARCIA SD A",
-            "D": "CD ESTRADENSE, CD PORTAS, VILAGARCIA SD B, CD BAMIO",
+            "A": "EQUIPO A1, EQUIPO A2, EQUIPO A3, EQUIPO A4",
+            "B": "EQUIPO B1, EQUIPO B2, EQUIPO B3, EQUIPO B4",
+            "C": "EQUIPO C1, EQUIPO C2, EQUIPO C3, EQUIPO C4",
+            "D": "EQUIPO D1, EQUIPO D2, EQUIPO D3, EQUIPO D4",
             "Eliminatorias Título": "Fase Final Oro",
             "Eliminatorias Consolación": "Fase Final Plata",
             "Semifinales Título": "Semis Oro",
@@ -40,39 +52,38 @@ def cargar():
 
         g_objs = {}
         for clave, equipos in grupos_data.items():
-            # Si es una sola letra (A, B, C, D), le ponemos "Grupo " delante
             nombre_mostrar = f"Grupo {clave}" if len(clave) == 1 else clave
             g = Grupo(nombre=nombre_mostrar, equipos=equipos, torneo_id=t.id)
             db.session.add(g)
             db.session.commit()
             g_objs[clave] = g
 
-        # --- 1. PARTIDOS FASE DE GRUPOS ---
+        # --- 1. PARTIDOS FASE DE GRUPOS (horario estándar F8) ---
         partidos_fase = [
-            ("A", "CATOIRA S.D.", "CROCHA CF", 1, "9:00"),
-            ("A", "BARRO CF", "XUVENTU AGUIÑO", 2, "9:00"),
-            ("B", "CALDAS CF", "RIVEIRA CF", 1, "9:25"),
-            ("B", "CD ROIS", "PORTONOVO SD", 2, "9:25"),
-            ("C", "AROSA SC", "EFM BOIRO", 1, "9:50"),
-            ("C", "AT CUNTIS CF", "VILAGARCIA SD A", 2, "9:50"),
-            ("D", "CD ESTRADENSE", "CD PORTAS", 1, "10:15"),
-            ("D", "VILAGARCIA SD B", "CD BAMIO", 2, "10:15"),
-            ("A", "CATOIRA S.D.", "BARRO CF", 1, "10:40"),
-            ("A", "CROCHA CF", "XUVENTU AGUIÑO", 2, "10:40"),
-            ("B", "CALDAS CF", "CD ROIS", 1, "11:05"),
-            ("B", "RIVEIRA CF", "PORTONOVO SD", 2, "11:05"),
-            ("C", "AROSA SC", "AT CUNTIS CF", 1, "11:30"),
-            ("C", "EFM BOIRO", "VILAGARCIA SD A", 2, "11:30"),
-            ("D", "CD ESTRADENSE", "VILAGARCIA SD B", 1, "11:55"),
-            ("D", "CD PORTAS", "CD BAMIO", 2, "11:55"),
-            ("A", "CATOIRA S.D.", "XUVENTU AGUIÑO", 1, "12:20"),
-            ("A", "CROCHA CF", "BARRO CF", 2, "12:20"),
-            ("B", "CALDAS CF", "PORTONOVO SD", 1, "12:45"),
-            ("B", "RIVEIRA CF", "CD ROIS", 2, "12:45"),
-            ("C", "AROSA SC", "VILAGARCIA SD A", 1, "13:10"),
-            ("C", "EFM BOIRO", "AT CUNTIS CF", 2, "13:10"),
-            ("D", "CD ESTRADENSE", "CD BAMIO", 1, "13:35"),
-            ("D", "CD PORTAS", "VILAGARCIA SD B", 2, "13:35")
+            ("A", "EQUIPO A1", "EQUIPO A2", 1, "9:00"),
+            ("A", "EQUIPO A3", "EQUIPO A4", 2, "9:00"),
+            ("B", "EQUIPO B1", "EQUIPO B2", 1, "9:25"),
+            ("B", "EQUIPO B3", "EQUIPO B4", 2, "9:25"),
+            ("C", "EQUIPO C1", "EQUIPO C2", 1, "9:50"),
+            ("C", "EQUIPO C3", "EQUIPO C4", 2, "9:50"),
+            ("D", "EQUIPO D1", "EQUIPO D2", 1, "10:15"),
+            ("D", "EQUIPO D3", "EQUIPO D4", 2, "10:15"),
+            ("A", "EQUIPO A1", "EQUIPO A3", 1, "10:40"),
+            ("A", "EQUIPO A2", "EQUIPO A4", 2, "10:40"),
+            ("B", "EQUIPO B1", "EQUIPO B3", 1, "11:05"),
+            ("B", "EQUIPO B2", "EQUIPO B4", 2, "11:05"),
+            ("C", "EQUIPO C1", "EQUIPO C3", 1, "11:30"),
+            ("C", "EQUIPO C2", "EQUIPO C4", 2, "11:30"),
+            ("D", "EQUIPO D1", "EQUIPO D3", 1, "11:55"),
+            ("D", "EQUIPO D2", "EQUIPO D4", 2, "11:55"),
+            ("A", "EQUIPO A1", "EQUIPO A4", 1, "12:20"),
+            ("A", "EQUIPO A2", "EQUIPO A3", 2, "12:20"),
+            ("B", "EQUIPO B1", "EQUIPO B4", 1, "12:45"),
+            ("B", "EQUIPO B2", "EQUIPO B3", 2, "12:45"),
+            ("C", "EQUIPO C1", "EQUIPO C4", 1, "13:10"),
+            ("C", "EQUIPO C2", "EQUIPO C3", 2, "13:10"),
+            ("D", "EQUIPO D1", "EQUIPO D4", 1, "13:35"),
+            ("D", "EQUIPO D2", "EQUIPO D3", 2, "13:35"),
         ]
 
         for g_clave, e1, e2, campo, hora in partidos_fase:
@@ -80,7 +91,6 @@ def cargar():
             db.session.add(p)
 
         # --- 2. ELIMINATORIAS Y FASES FINALES ---
-        # Separamos Oro y Plata por sus nombres de grupo correspondientes
         partidos_finales = [
             # Título (Oro)
             ("Eliminatorias Título", "1º GRUPO A", "2º GRUPO B", 1, "15:00", "E-1"),
@@ -98,15 +108,23 @@ def cargar():
             ("Eliminatorias Consolación", "3º GRUPO D", "4º GRUPO C", 2, "16:15", "EC-4"),
             ("Semifinales Consolación", "GANADOR EC-1", "GANADOR EC-2", 2, "16:40", "SC-1"),
             ("Semifinales Consolación", "GANADOR EC-3", "GANADOR EC-4", 2, "17:20", "SC-2"),
-            ("Final Consolación", "GANADOR SC-1", "GANADOR SC-2", 2, "18:30", "F-PLATA")
+            ("Final Consolación", "GANADOR SC-1", "GANADOR SC-2", 2, "18:30", "F-PLATA"),
         ]
 
         for g_clave, e1, e2, campo, hora, codigo in partidos_finales:
             p = Partido(equipo1=e1, equipo2=e2, grupo_id=g_objs[g_clave].id, numero_campo=campo, hora=hora, codigo_partido=codigo)
             db.session.add(p)
-        
+
         db.session.commit()
-        print("¡Calendario restaurado y corregido! Nombres compatibles con las vistas.")
+        print(f"Torneo '{nombre_torneo}' cargado correctamente con {len(partidos_fase)} partidos de grupos y {len(partidos_finales)} de eliminatoria.")
+        print(f"Recuerda editar los equipos y la configuración de cruces desde la interfaz web.")
+
 
 if __name__ == "__main__":
-    cargar()
+    reset = "--reset" in sys.argv
+    if reset:
+        confirmar = input("⚠️  ATENCIÓN: --reset borrará TODOS los torneos existentes. ¿Continuar? (s/N): ")
+        if confirmar.lower() != "s":
+            print("Operación cancelada.")
+            sys.exit(0)
+    cargar(reset=reset)

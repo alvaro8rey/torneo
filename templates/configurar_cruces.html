@@ -12,9 +12,14 @@
 </head>
 <body>
     <div class="container">
-        <h2 class="mb-4">Configurar Lógica de Eliminatorias</h2>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">Configurar Cruces Eliminatorias</h2>
+            <a href="/torneo/{{ torneo.id }}" class="btn btn-outline-light btn-sm">← Volver</a>
+        </div>
         <div class="alert alert-info">
-            Define qué posiciones de la fase de grupos alimentan cada partido de eliminatoria.
+            Define qué posición de qué grupo alimenta cada partido de cuartos de final.<br>
+            <strong>Pos:</strong> 1 = 1º clasificado, 2 = 2º, 3 = 3º, 4 = 4º.<br>
+            El sistema identifica el partido por <strong>Hora + Campo</strong>. Los partidos de semis y final se asignan automáticamente por código de ganador.
         </div>
 
         <form method="POST">
