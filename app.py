@@ -77,6 +77,11 @@ class ConfigCruce(db.Model):
     grupo_letra_2 = db.Column(db.String(5))
     posicion_2 = db.Column(db.Integer)  # 1-indexed
 
+class ConfigGlobal(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    clave = db.Column(db.String(50), unique=True, nullable=False)
+    valor = db.Column(db.String(200))
+
 
 # Cruces por defecto para formato estándar F8 (4 grupos, 2 campos)
 CONFIG_CRUCES_DEFAULT = [
@@ -231,6 +236,11 @@ def actualizar_cruces_eliminatorias(torneo_id):
 
 @app.route('/')
 def index():
+    cfg = ConfigGlobal.query.filter_by(clave='torneo_publico_id').first()
+    if cfg and cfg.valor:
+        t = Torneo.query.get(int(cfg.valor))
+        if t:
+            return redirect(url_for('publico_torneo', t_id=t.id))
     torneos = Torneo.query.all()
     if len(torneos) == 1:
         return redirect(url_for('publico_torneo', t_id=torneos[0].id))
@@ -254,7 +264,28 @@ def vista_publica():
 @admin_required
 def admin_index():
     torneos = Torneo.query.all()
-    return render_template('index.html', torneos=torneos)
+    cfg = ConfigGlobal.query.filter_by(clave='torneo_publico_id').first()
+    torneo_publico_id = int(cfg.valor) if cfg and cfg.valor else None
+    return render_template('index.html', torneos=torneos, torneo_publico_id=torneo_publico_id)
+
+@app.route('/admin/pantalla-publica', methods=['GET', 'POST'])
+@admin_required
+def gestionar_pantalla_publica():
+    torneos = Torneo.query.all()
+    cfg = ConfigGlobal.query.filter_by(clave='torneo_publico_id').first()
+    torneo_publico_id = int(cfg.valor) if cfg and cfg.valor else None
+
+    if request.method == 'POST':
+        seleccion = request.form.get('torneo_id')
+        if not cfg:
+            cfg = ConfigGlobal(clave='torneo_publico_id', valor=seleccion)
+            db.session.add(cfg)
+        else:
+            cfg.valor = seleccion
+        db.session.commit()
+        return redirect(url_for('admin_index'))
+
+    return render_template('gestionar_publica.html', torneos=torneos, torneo_publico_id=torneo_publico_id)
 
 @app.route('/torneo/<int:t_id>')
 @admin_required

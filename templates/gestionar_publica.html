@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Gestionar Pantalla Pública</title>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; min-height: 100vh; }
+        .card { background-color: #1e293b; border: 1px solid #334155; color: #f8fafc; border-radius: 12px; }
+        .text-muted-custom { color: #94a3b8 !important; }
+
+        .torneo-option {
+            border: 2px solid #334155;
+            border-radius: 10px;
+            padding: 1.25rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background-color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .torneo-option:hover {
+            border-color: #3b82f6;
+            background-color: #1e3a5f;
+        }
+        .torneo-option.seleccionado {
+            border-color: #22c55e;
+            background-color: rgba(34, 197, 94, 0.08);
+        }
+        input[type="radio"] { accent-color: #22c55e; width: 20px; height: 20px; }
+
+        .btn-guardar {
+            background: linear-gradient(45deg, #22c55e, #16a34a);
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        .btn-guardar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+            color: white;
+        }
+        .preview-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .live-dot {
+            width: 8px; height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5" style="max-width: 680px;">
+
+        <div class="mb-4">
+            <a href="/admin" class="text-muted-custom text-decoration-none">← Volver al panel</a>
+        </div>
+
+        <div class="text-center mb-5">
+            <div style="font-size: 2.5rem;">📺</div>
+            <h2 class="fw-bold mb-1">Pantalla Pública</h2>
+            <p class="text-muted-custom">Elige qué torneo ven los aficionados al entrar en <strong class="text-info">/</strong></p>
+        </div>
+
+        {% if not torneos %}
+        <div class="card p-4 text-center text-muted-custom">
+            No hay torneos creados todavía.
+        </div>
+        {% else %}
+        <form method="POST" action="/admin/pantalla-publica">
+            <div class="d-flex flex-column gap-3 mb-4">
+                {% for torneo in torneos %}
+                <label class="torneo-option {% if torneo.id == torneo_publico_id %}seleccionado{% endif %}">
+                    <input type="radio" name="torneo_id" value="{{ torneo.id }}"
+                        {% if torneo.id == torneo_publico_id %}checked{% endif %}>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold fs-5">{{ torneo.nombre }}</div>
+                        <div class="text-muted-custom small">ID: {{ torneo.id }}</div>
+                    </div>
+                    {% if torneo.id == torneo_publico_id %}
+                    <span class="preview-badge">
+                        <span class="live-dot"></span> ACTIVO
+                    </span>
+                    {% endif %}
+                </label>
+                {% endfor %}
+            </div>
+
+            <div class="d-flex gap-3 align-items-center">
+                <button type="submit" class="btn btn-guardar">
+                    Guardar y publicar
+                </button>
+                <a href="/" target="_blank" class="btn btn-outline-info">
+                    Ver página pública →
+                </a>
+            </div>
+        </form>
+        {% endif %}
+
+        {% if torneo_publico_id %}
+        <div class="mt-4 p-3 rounded" style="background: rgba(34,197,94,0.07); border: 1px solid rgba(34,197,94,0.2);">
+            <span class="live-dot"></span>
+            <span class="small text-muted-custom">
+                Ahora mismo la página pública muestra:
+                <strong class="text-white">{{ torneos | selectattr('id', 'equalto', torneo_publico_id) | map(attribute='nombre') | first | default('—') }}</strong>
+            </span>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <script>
+        // Resaltar visualmente la opción seleccionada al hacer clic
+        document.querySelectorAll('.torneo-option').forEach(label => {
+            label.addEventListener('click', () => {
+                document.querySelectorAll('.torneo-option').forEach(l => l.classList.remove('seleccionado'));
+                label.classList.add('seleccionado');
+            });
+        });
+    </script>
+</body>
+</html>
