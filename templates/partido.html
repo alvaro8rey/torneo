@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>LIVE: {{ p.equipo1 }} vs {{ p.equipo2 }}</title>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', sans-serif; }
+        .scoreboard { background: #1e293b; border-radius: 20px; padding: 40px; border: 1px solid #334155; }
+        .timer { font-size: 5rem; font-family: 'Courier New', Courier, monospace; color: #fbbf24; font-weight: bold; }
+        .score { font-size: 10rem; font-weight: 800; }
+        .team-name { font-size: 2rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; }
+        .historial-item { border-left: 4px solid #3b82f6; background: #334155; margin-bottom: 8px; padding: 12px; border-radius: 0 8px 8px 0; }
+        .modal-content { background-color: #1e293b; color: white; border: 1px solid #334155; }
+    </style>
+</head>
+<body>
+    <div class="container py-5 text-center">
+        <div class="timer mb-2" id="timer">00:00</div>
+        <div class="mb-5">
+            <button class="btn btn-lg btn-warning px-4 fw-bold" onclick="toggleTimer()" id="btnPause">INICIAR PARTIDO</button>
+            <button class="btn btn-lg btn-outline-danger ms-2" onclick="resetTimer()">RESET</button>
+        </div>
+
+        <div class="scoreboard shadow-lg mb-5">
+            <div class="row align-items-center">
+                <div class="col-md-5">
+                    <div class="team-name mb-2">{{ p.equipo1 }}</div>
+                    <div class="score" id="score1">{{ p.goles1 }}</div>
+                    <div class="input-group mt-4">
+                        <input type="number" id="dorsal1" class="form-control form-control-lg text-center" placeholder="Dorsal">
+                        <button class="btn btn-success btn-lg px-4" onclick="registrarGol(1)">¡GOL!</button>
+                    </div>
+                </div>
+                <div class="col-md-2 h1 text-muted">VS</div>
+                <div class="col-md-5">
+                    <div class="team-name mb-2">{{ p.equipo2 }}</div>
+                    <div class="score" id="score2">{{ p.goles2 }}</div>
+                    <div class="input-group mt-4">
+                        <input type="number" id="dorsal2" class="form-control form-control-lg text-center" placeholder="Dorsal">
+                        <button class="btn btn-success btn-lg px-4" onclick="registrarGol(2)">¡GOL!</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mx-auto text-start" style="max-width: 600px;">
+            <h4 class="text-info mb-4 border-bottom border-info pb-2">TIMELINE DE GOLES</h4>
+            <div id="historial">
+                {% for evento in p.eventos|sort(attribute='id', reverse=True) %}
+                <div class="historial-item shadow-sm">
+                    <span class="badge bg-info text-dark me-2">{{ evento.minuto }}</span> 
+                    <b>Gol de {{ evento.equipo }}</b> (Dorsal #{{ evento.dorsal }})
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="mt-5 pt-5 d-flex justify-content-center gap-3">
+            <a href="/torneo/{{ t_id }}" class="btn btn-outline-secondary px-4">Volver sin finalizar</a>
+            <button onclick="gestionarFinalizacion()" class="btn btn-danger btn-lg px-5 fw-bold">FINALIZAR PARTIDO</button>
+        </div>
+    </div>
+
+    <!-- Modal para Penaltis -->
+    <div class="modal fade" id="modalPenaltis" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-4 text-center">
+                <h3>EMPATE EN ELIMINATORIA</h3>
+                <p class="text-muted">Elige quién ha ganado en la tanda de penaltis para que avance de ronda.</p>
+                <form action="/finalizar/{{ p.id }}" method="POST">
+                    <div class="d-grid gap-3 mt-4">
+                        <button type="submit" name="ganador_penaltis" value="{{ p.equipo1 }}" class="btn btn-primary btn-lg">GANADOR: {{ p.equipo1 }}</button>
+                        <button type="submit" name="ganador_penaltis" value="{{ p.equipo2 }}" class="btn btn-primary btn-lg">GANADOR: {{ p.equipo2 }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Forzamos que seconds sea lo que diga el servidor, o 0 si no hay nada
+        let seconds = {{ p.segundos_transcurridos or 0 }};
+        let timerInterval = null;
+        let isPaused = true;
+
+        window.onload = function() {
+            updateDisplay();
+            
+            // Lógica corregida: 
+            // Solo arrancamos si 'esta_pausado' es explícitamente Falso Y tenemos un inicio_ts válido.
+            // Si venimos de la vista de torneo, 'esta_pausado' debe ser True por defecto en el servidor.
+            const estaPausadoServer = "{{ p.esta_pausado }}"; 
+            const enCursoServer = "{{ p.en_curso }}";
+
+            if (enCursoServer === "True" && estaPausadoServer === "False") {
+                const inicio = {{ p.inicio_ts or 0 }};
+                if (inicio > 0) {
+                    const ahora = Math.floor(Date.now() / 1000);
+                    seconds = ahora - inicio;
+                    startTimer();
+                }
+            } else {
+                // Si el servidor dice que está pausado, nos aseguramos de que el botón diga "INICIAR"
+                document.getElementById('btnPause').innerText = seconds > 0 ? "CONTINUAR TIEMPO" : "INICIAR PARTIDO";
+                isPaused = true;
+            }
+        };
+
+        function updateDisplay() {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            document.getElementById('timer').innerText = (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+        }
+
+        function syncTimerState(pausado) {
+            const fd = new FormData();
+            fd.append('segundos', seconds);
+            fd.append('pausado', pausado);
+            // Esta llamada es crítica para que la pantalla pública sepa qué hacer
+            fetch(`/actualizar_timer/{{ p.id }}`, { method: 'POST', body: fd });
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => { 
+                seconds++; 
+                updateDisplay(); 
+            }, 1000);
+            document.getElementById('btnPause').innerText = "PAUSAR TIEMPO";
+            document.getElementById('btnPause').className = "btn btn-lg btn-outline-warning px-4";
+            isPaused = false;
+        }
+
+        function toggleTimer() {
+            if (isPaused) {
+                startTimer();
+                syncTimerState(false); 
+            } else {
+                clearInterval(timerInterval);
+                document.getElementById('btnPause').innerText = "CONTINUAR TIEMPO";
+                document.getElementById('btnPause').className = "btn btn-lg btn-warning px-4";
+                isPaused = true;
+                syncTimerState(true); 
+            }
+        }
+
+        function resetTimer() {
+            if(confirm("¿Seguro que quieres resetear el cronómetro?")) {
+                clearInterval(timerInterval);
+                seconds = 0;
+                updateDisplay();
+                isPaused = true;
+                document.getElementById('btnPause').innerText = "INICIAR PARTIDO";
+                document.getElementById('btnPause').className = "btn btn-lg btn-warning px-4";
+                syncTimerState(true);
+            }
+        }
+
+        function gestionarFinalizacion() {
+            const g1 = parseInt(document.getElementById('score1').innerText);
+            const g2 = parseInt(document.getElementById('score2').innerText);
+            const esEliminatoria = "{{ p.codigo_partido }}" !== "None" && "{{ p.codigo_partido }}" !== "";
+
+            if (g1 === g2 && esEliminatoria) {
+                const myModal = new bootstrap.Modal(document.getElementById('modalPenaltis'));
+                myModal.show();
+            } else {
+                if(confirm("¿Estás seguro de que quieres dar por finalizado el partido?")) {
+                    window.location.href = "/finalizar/{{ p.id }}";
+                }
+            }
+        }
+
+        function registrarGol(equipoNum) {
+            const dorsal = document.getElementById('dorsal' + equipoNum).value;
+            const minuto = document.getElementById('timer').innerText;
+            const equipoNombre = equipoNum === 1 ? "{{ p.equipo1 }}" : "{{ p.equipo2 }}";
+
+            if (!dorsal) { alert("¡Introduce el dorsal del goleador!"); return; }
+
+            const fd = new FormData();
+            fd.append('dorsal', dorsal);
+            fd.append('minuto', minuto);
+
+            fetch(`/gol/{{ p.id }}/${equipoNum}`, { method: 'POST', body: fd })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('score' + equipoNum).innerText = (equipoNum === 1 ? data.goles1 : data.goles2);
+                
+                const item = document.createElement('div');
+                item.className = "historial-item shadow-sm";
+                item.innerHTML = `<span class="badge bg-info text-dark me-2">${minuto}</span> <b>Gol de ${equipoNombre}</b> (Dorsal #${dorsal})`;
+                const historial = document.getElementById('historial');
+                historial.insertBefore(item, historial.firstChild);
+                
+                document.getElementById('dorsal' + equipoNum).value = "";
+            });
+        }
+    </script>
+</body>
+</html>

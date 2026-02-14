@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Editar Partido</title>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; padding-top: 50px; }
+        .card { background-color: #1e293b; border: 1px solid #334155; color: #f8fafc; border-radius: 12px; }
+        .form-control, .form-select { background-color: #0f172a; border: 1px solid #475569; color: white; }
+        .form-control:focus { background-color: #0f172a; color: white; border-color: #3b82f6; box-shadow: none; }
+        
+        /* MEJORA DE CONTRASTE: Labels y textos secundarios */
+        label { font-weight: bold; color: #e2e8f0; margin-bottom: 8px; }
+        .text-info-custom { color: #94a3b8; font-size: 0.85rem; }
+        .vs-badge { background: #334155; color: #3b82f6; padding: 10px 15px; border-radius: 50%; font-weight: bold; }
+        
+        /* NOTA INFERIOR: Ahora con texto claro */
+        .footer-note { 
+            background: rgba(30, 41, 59, 0.5); 
+            border: 1px solid #334155; 
+            color: #cbd5e1; /* Gris muy claro, legible */
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .footer-note strong { color: #fbbf24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow-lg">
+                    <div class="card-header border-bottom border-secondary py-3 text-center">
+                        <h4 class="mb-0 text-primary fw-bold">Panel de Edición Manual</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="POST">
+                            <div class="row text-center align-items-center mb-4">
+                                <div class="col-5">
+                                    <h5 class="fw-bold mb-3">{{ partido.equipo1 }}</h5>
+                                    <input type="number" name="goles1" class="form-control form-control-lg text-center fw-bold" value="{{ partido.goles1 }}">
+                                </div>
+                                <div class="col-2">
+                                    <div class="vs-badge shadow-sm">VS</div>
+                                </div>
+                                <div class="col-5">
+                                    <h5 class="fw-bold mb-3">{{ partido.equipo2 }}</h5>
+                                    <input type="number" name="goles2" class="form-control form-control-lg text-center fw-bold" value="{{ partido.goles2 }}">
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label>Estado del Partido</label>
+                                    <select name="estado" class="form-select">
+                                        <option value="programado" {% if not partido.finalizado and not partido.en_curso %}selected{% endif %}>📅 Programado</option>
+                                        <option value="en_curso" {% if partido.en_curso %}selected{% endif %}>🔴 En Vivo</option>
+                                        <option value="finalizado" {% if partido.finalizado %}selected{% endif %}>🏁 Finalizado</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label>Ganador Penaltis</label>
+                                    <select name="ganador_penaltis" class="form-select">
+                                        <option value="">Ninguno</option>
+                                        <option value="{{ partido.equipo1 }}" {% if partido.ganador_penaltis == partido.equipo1 %}selected{% endif %}>{{ partido.equipo1 }}</option>
+                                        <option value="{{ partido.equipo2 }}" {% if partido.ganador_penaltis == partido.equipo2 %}selected{% endif %}>{{ partido.equipo2 }}</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg fw-bold">Guardar Cambios</button>
+                                <a href="/torneo/{{ partido.grupo.torneo_id }}" class="btn btn-outline-secondary">Volver al Calendario</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="footer-note mt-4 text-center">
+                    <p class="mb-0">
+                        <strong>Atención:</strong> Esta herramienta modifica los valores directamente. 
+                        Los cambios afectarán a las clasificaciones y cruces en tiempo real.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

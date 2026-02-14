@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vista Pública - Torneo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-blue: #3b82f6;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden; /* Evita scroll innecesario */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .main-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            padding: 10px;
+            gap: 10px;
+        }
+
+        .campo-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #334155;
+        }
+
+        .header-campo {
+            background-color: var(--accent-blue);
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 1.2rem;
+        }
+
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .badge-live {
+            background-color: #ef4444;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        .timer {
+            font-size: clamp(2rem, 8vh, 4rem);
+            font-weight: bold;
+            color: #fbbf24;
+            margin-bottom: 15px;
+            font-family: monospace;
+        }
+
+        .match-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            gap: 15px;
+        }
+
+        .team-name {
+            flex: 1;
+            font-size: clamp(1rem, 3vw, 2.2rem);
+            font-weight: 800;
+            text-align: center;
+            text-transform: uppercase;
+            word-wrap: break-word;
+        }
+
+        .score-box {
+            background-color: #0f172a;
+            padding: 15px 25px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border: 2px solid #334155;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .score-number {
+            font-size: clamp(2.5rem, 10vh, 6rem);
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .score-divider {
+            font-size: 2rem;
+            color: var(--text-dim);
+        }
+
+        /* Footer info boxes */
+        .footer-info {
+            background-color: rgba(15, 23, 42, 0.4);
+            padding: 10px 15px;
+            border-top: 1px solid #334155;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+
+        .info-label {
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .info-value {
+            font-weight: 600;
+        }
+
+        .next-match-pill {
+            background: #334155;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-blue);
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        /* Responsive adjustments for mobile */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .campo-column {
+                min-height: 48vh;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <!-- Campo 1 -->
+        <div class="campo-column" id="container-campo-1">
+            <div class="header-campo">Campo 1</div>
+            <div class="content-area" id="live-1">
+                <div id="status-1" class="badge-live">EN DIRECTO</div>
+                <div class="timer" id="timer-1">00:00</div>
+                
+                <div class="match-display">
+                    <div class="team-name" id="c1-eq1">--</div>
+                    <div class="score-box">
+                        <span class="score-number" id="c1-g1">0</span>
+                        <span class="score-divider">-</span>
+                        <span class="score-number" id="c1-g2">0</span>
+                    </div>
+                    <div class="team-name" id="c1-eq2">--</div>
+                </div>
+            </div>
+            
+            <div class="footer-info">
+                <div class="info-row">
+                    <span class="info-label">Anterior</span>
+                    <span class="info-value" id="c1-ant">---</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Siguiente</span>
+                    <span class="info-value">
+                        <span id="c1-sig">---</span>
+                        <span id="c1-sig-hora" class="next-match-pill">--:--</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Campo 2 -->
+        <div class="campo-column" id="container-campo-2">
+            <div class="header-campo">Campo 2</div>
+            <div class="content-area" id="live-2">
+                <div id="status-2" class="badge-live">EN DIRECTO</div>
+                <div class="timer" id="timer-2">00:00</div>
+                
+                <div class="match-display">
+                    <div class="team-name" id="c2-eq1">--</div>
+                    <div class="score-box">
+                        <span class="score-number" id="c2-g1">0</span>
+                        <span class="score-divider">-</span>
+                        <span class="score-number" id="c2-g2">0</span>
+                    </div>
+                    <div class="team-name" id="c2-eq2">--</div>
+                </div>
+            </div>
+            
+            <div class="footer-info">
+                <div class="info-row">
+                    <span class="info-label">Anterior</span>
+                    <span class="info-value" id="c2-ant">---</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Siguiente</span>
+                    <span class="info-value">
+                        <span id="c2-sig">---</span>
+                        <span id="c2-sig-hora" class="next-match-pill">--:--</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function actualizarReloj(p, elementId) {
+            if (!p || p.esta_pausado) {
+                if (p) {
+                    const totalSecs = p.segundos_transcurridos;
+                    const m = Math.floor(totalSecs / 60).toString().padStart(2, '0');
+                    const s = (totalSecs % 60).toString().padStart(2, '0');
+                    document.getElementById(elementId).innerText = `${m}:${s}`;
+                } else {
+                    document.getElementById(elementId).innerText = "--:--";
+                }
+                return;
+            }
+            const ahora = Math.floor(Date.now() / 1000);
+            const totalSecs = p.segundos_transcurridos + (ahora - p.inicio_ts);
+            const m = Math.floor(totalSecs / 60).toString().padStart(2, '0');
+            const s = (totalSecs % 60).toString().padStart(2, '0');
+            document.getElementById(elementId).innerText = `${m}:${s}`;
+        }
+
+        async function fetchPartidos() {
+            try {
+                const response = await fetch('/api/partidos_activos');
+                const data = await response.json();
+
+                for (let i = 1; i <= 2; i++) {
+                    const campo = data[`campo_${i}`];
+                    
+                    // Actualizar Actual/En Vivo
+                    if (campo.actual) {
+                        document.getElementById(`c${i}-eq1`).innerText = campo.actual.equipo1;
+                        document.getElementById(`c${i}-eq2`).innerText = campo.actual.equipo2;
+                        document.getElementById(`c${i}-g1`).innerText = campo.actual.goles1;
+                        document.getElementById(`c${i}-g2`).innerText = campo.actual.goles2;
+                        document.getElementById(`status-${i}`).innerText = "EN DIRECTO";
+                        document.getElementById(`status-${i}`).style.backgroundColor = "#ef4444";
+                        actualizarReloj(campo.actual, `timer-${i}`);
+                    } else {
+                        // Si no hay partido activo, mostrar marcador vacío o siguiente
+                        document.getElementById(`c${i}-eq1`).innerText = campo.proximo ? campo.proximo.equipo1 : "--";
+                        document.getElementById(`c${i}-eq2`).innerText = campo.proximo ? campo.proximo.equipo2 : "--";
+                        document.getElementById(`c${i}-g1`).innerText = "0";
+                        document.getElementById(`c${i}-g2`).innerText = "0";
+                        document.getElementById(`status-${i}`).innerText = "PRÓXIMO";
+                        document.getElementById(`status-${i}`).style.backgroundColor = "#334155";
+                        document.getElementById(`timer-${i}`).innerText = "--:--";
+                    }
+
+                    // Actualizar Último Finalizado
+                    if (campo.ultimo_finalizado) {
+                        document.getElementById(`c${i}-ant`).innerText = 
+                            `${campo.ultimo_finalizado.equipo1} ${campo.ultimo_finalizado.goles1} - ${campo.ultimo_finalizado.goles2} ${campo.ultimo_finalizado.equipo2}`;
+                    }
+
+                    // Actualizar Siguiente
+                    if (campo.proximo) {
+                        document.getElementById(`c${i}-sig`).innerText = 
+                            `${campo.proximo.equipo1} vs ${campo.proximo.equipo2}`;
+                        document.getElementById(`c${i}-sig-hora`).innerText = campo.proximo.hora;
+                    }
+                }
+            } catch (error) {
+                console.error("Error cargando datos:", error);
+            }
+        }
+
+        setInterval(fetchPartidos, 1000);
+        fetchPartidos();
+    </script>
+</body>
+</html>

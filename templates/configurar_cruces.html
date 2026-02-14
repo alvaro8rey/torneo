@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Configurar Cruces - {{ torneo.nombre }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #0f172a; color: white; padding: 20px; }
+        .card { background-color: #1e293b; border: 1px solid #334155; }
+        .form-control { background-color: #0f172a; color: white; border: 1px solid #475569; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="mb-4">Configurar Lógica de Eliminatorias</h2>
+        <div class="alert alert-info">
+            Define qué posiciones de la fase de grupos alimentan cada partido de eliminatoria.
+        </div>
+
+        <form method="POST">
+            <div id="contenedor-cruces">
+                {% for c in configs %}
+                <div class="card mb-3 p-3 cruce-row">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-2">
+                            <label class="small">Hora</label>
+                            <input type="text" name="hora[]" class="form-control" value="{{ c.hora }}" placeholder="15:00">
+                        </div>
+                        <div class="col-md-1">
+                            <label class="small">Campo</label>
+                            <input type="number" name="campo[]" class="form-control" value="{{ c.numero_campo }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small">Equipo 1 (Origen)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Grupo</span>
+                                <input type="text" name="g1[]" class="form-control" value="{{ c.grupo_letra_1 }}" placeholder="A">
+                                <span class="input-group-text">Pos</span>
+                                <input type="number" name="p1[]" class="form-control" value="{{ c.posicion_1 }}" placeholder="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small">Equipo 2 (Origen)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Grupo</span>
+                                <input type="text" name="g2[]" class="form-control" value="{{ c.grupo_letra_2 }}" placeholder="B">
+                                <span class="input-group-text">Pos</span>
+                                <input type="number" name="p2[]" class="form-control" value="{{ c.posicion_2 }}" placeholder="2">
+                            </div>
+                        </div>
+                        <div class="col-md-1 text-end">
+                            <button type="button" class="btn btn-outline-danger btn-sm mt-3" onclick="this.closest('.card').remove()">X</button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+                <button type="button" class="btn btn-secondary" onclick="agregarFila()">+ Añadir Cruce</button>
+                <button type="submit" class="btn btn-primary">Guardar Configuración</button>
+                <a href="/torneo/{{ torneo.id }}" class="btn btn-link text-white">Cancelar</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function agregarFila() {
+            const html = `
+            <div class="card mb-3 p-3 cruce-row">
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-2"><input type="text" name="hora[]" class="form-control" placeholder="15:00"></div>
+                    <div class="col-md-1"><input type="number" name="campo[]" class="form-control" value="1"></div>
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text">Grupo</span><input type="text" name="g1[]" class="form-control" placeholder="A">
+                            <span class="input-group-text">Pos</span><input type="number" name="p1[]" class="form-control" placeholder="1">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text">Grupo</span><input type="text" name="g2[]" class="form-control" placeholder="B">
+                            <span class="input-group-text">Pos</span><input type="number" name="p2[]" class="form-control" placeholder="2">
+                        </div>
+                    </div>
+                    <div class="col-md-1 text-end"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.card').remove()">X</button></div>
+                </div>
+            </div>`;
+            document.getElementById('contenedor-cruces').insertAdjacentHTML('beforeend', html);
+        }
+    </script>
+</body>
+</html>
