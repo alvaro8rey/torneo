@@ -254,6 +254,14 @@ def publico_torneo(t_id):
     top_g = Goleador.query.filter_by(torneo_id=t_id).order_by(Goleador.goles.desc()).limit(15).all()
     return render_template('publico_torneo.html', t=t, tablas=tablas, top=top_g)
 
+@app.route('/publico/<int:t_id>/grupo/<int:g_id>')
+def publico_grupo(t_id, g_id):
+    t = Torneo.query.get_or_404(t_id)
+    g = Grupo.query.get_or_404(g_id)
+    tablas = obtener_tablas(t_id)
+    partidos_ordenados = sorted(g.partidos, key=lambda p: (p.hora or ''))
+    return render_template('publico_grupo.html', t=t, g=g, tabla=tablas.get(g.id, []), partidos=partidos_ordenados)
+
 @app.route('/publico')
 def vista_publica():
     return render_template('publico.html')
