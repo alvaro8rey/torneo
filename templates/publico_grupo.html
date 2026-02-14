@@ -55,7 +55,19 @@
         .header-sub { font-size: 0.68rem; color: #64748b; margin-top: 2px; }
 
         /* ── TABLA DE CLASIFICACIÓN ── */
-        .tabla-clasificacion { font-size: 0.82rem; min-width: 360px; }
+        /*
+         * Bootstrap 5.3 cambió --bs-table-bg a var(--bs-body-bg) = blanco por defecto.
+         * Lo fijamos al color oscuro de la card para que todas las celdas sean uniformes.
+         * pasa-ronda usa --bs-table-bg para que las celdas sticky hereden automáticamente
+         * el mismo color que el resto de la fila (sin calcular nada manualmente).
+         */
+        .tabla-clasificacion {
+            font-size: 0.82rem;
+            min-width: 360px;
+            --bs-table-bg: #1e293b;
+            --bs-table-color: #f8fafc;
+            --bs-table-border-color: #1e3a5f;
+        }
         .tabla-clasificacion th {
             font-size: 0.68rem;
             font-weight: 600;
@@ -65,26 +77,23 @@
             letter-spacing: 0.5px;
             border-bottom: 1px solid #334155;
         }
-        .tabla-clasificacion td { padding: 9px 6px; border-bottom: 1px solid #1e3a5f; }
+        .tabla-clasificacion td { padding: 9px 6px; }
         .tabla-clasificacion tbody tr:last-child td { border-bottom: none; }
-        .pasa-ronda { background-color: rgba(59,130,246,0.06); }
+
+        /* Solid equivalente a rgba(59,130,246,0.06) sobre #1e293b */
+        .pasa-ronda { --bs-table-bg: #1f2e46; }
+
         .equipo-cell { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* Columnas sticky: # y Equipo */
+        /* Sticky: heredan --bs-table-bg de su fila → siempre igual que el resto */
         .col-sticky-num {
             position: sticky; left: 0; z-index: 2;
-            background: #1e293b;
+            background: var(--bs-table-bg) !important;
             min-width: 30px;
         }
         .col-sticky-equipo {
             position: sticky; left: 30px; z-index: 2;
-            background: #1e293b;
-            box-shadow: 2px 0 6px rgba(0,0,0,0.35);
-        }
-        .pasa-ronda .col-sticky-num,
-        .pasa-ronda .col-sticky-equipo {
-            /* rgba(59,130,246,0.06) sobre #1e293b = ~#202e47 */
-            background: #202e47;
+            background: var(--bs-table-bg) !important;
         }
 
         .tabla-scroll-wrap {

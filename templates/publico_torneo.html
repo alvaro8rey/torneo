@@ -92,28 +92,35 @@
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
-        .tabla-card table { font-size: 0.78rem; min-width: 280px; }
+        /*
+         * Bootstrap 5.3: --bs-table-bg = blanco por defecto. Lo fijamos al oscuro.
+         * La tabla de clasificación hereda el color; pasa-ronda lo sobreescribe con
+         * un azul sólido. Las sticky cells usan var(--bs-table-bg) para heredar
+         * automáticamente el color correcto de su fila sin divergir nunca.
+         */
+        .tabla-card table {
+            font-size: 0.78rem;
+            min-width: 280px;
+            --bs-table-bg: #1e293b;
+            --bs-table-color: #f8fafc;
+            --bs-table-border-color: #1e293b;
+        }
         .tabla-card th { font-size: 0.68rem; font-weight: 600; padding: 6px 4px; color: #94a3b8; }
         .tabla-card td { padding: 6px 4px; }
         .tabla-card .equipo-cell { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .pasa-ronda { background-color: rgba(59,130,246,0.07); }
 
-        /* Columnas sticky: # y Equipo */
+        /* Solid equivalente a rgba(59,130,246,0.07) sobre #1e293b */
+        .pasa-ronda { --bs-table-bg: #202f48; }
+
+        /* Sticky: heredan --bs-table-bg de su fila → siempre igual que el resto */
         .col-sticky-num {
             position: sticky; left: 0; z-index: 2;
-            background: #1e293b;
+            background: var(--bs-table-bg) !important;
             min-width: 26px;
         }
         .col-sticky-equipo {
             position: sticky; left: 26px; z-index: 2;
-            background: #1e293b;
-            /* sombra sutil para indicar que hay contenido detrás */
-            box-shadow: 2px 0 6px rgba(0,0,0,0.35);
-        }
-        .pasa-ronda .col-sticky-num,
-        .pasa-ronda .col-sticky-equipo {
-            /* rgba(59,130,246,0.07) sobre #1e293b = ~#202f48 */
-            background: #202f48;
+            background: var(--bs-table-bg) !important;
         }
         .btn-ver-grupo {
             font-size: 0.72rem;
