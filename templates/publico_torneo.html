@@ -568,15 +568,13 @@
 
     </div>
 
-    <div class="footer-bar">
-        Actualización automática cada 30 s
+    <div class="footer-bar" id="footer-status">
+        <span id="footer-txt">Conectando…</span>
     </div>
 
     <script>
     (function() {
         const T_ID = {{ t.id }};
-        let hayEnCurso = false;
-        let timer = null;
 
         // ── helpers clasificación ──────────────────────────────────────────
         const dgStr = dg => dg > 0 ? '+' + dg : '' + dg;
@@ -602,30 +600,25 @@
         }
 
         // ── actualizar tarjeta de partido ──────────────────────────────────
-        // Actualiza score, estado y clases de ganador sin recargar la página.
         function updateCard(p) {
             const card = document.querySelector(`[data-partido-id="${p.id}"]`);
             if (!card) return;
 
-            // clase en-curso en la tarjeta
             card.classList.toggle('en-curso', p.en_curso);
 
-            // badge de estado
             const estado = card.querySelector('.match-estado');
             if (estado) {
-                if (p.en_curso)      estado.innerHTML = '<span class="badge-live">EN VIVO</span>';
+                if (p.en_curso)        estado.innerHTML = '<span class="badge-live">EN VIVO</span>';
                 else if (p.finalizado) estado.innerHTML = '<span class="text-success">FINAL</span>';
-                else                 estado.innerHTML = '<span class="text-muted-custom">Pendiente</span>';
+                else                   estado.innerHTML = '<span class="text-muted-custom">Pendiente</span>';
             }
 
-            // marcador
             const pill = card.querySelector('.score-pill');
             if (pill) {
                 if (p.en_curso || p.finalizado) {
                     const cls = p.en_curso ? 'score-live'
                                : p.es_plata ? 'score-final-plata' : 'score-final';
                     pill.className = 'score-pill ' + cls;
-                    // thinsp como carácter unicode para evitar entidades HTML en JS
                     pill.textContent = p.goles1 + '\u2009-\u2009' + p.goles2;
                 } else {
                     pill.className = 'score-pill score-vs';
@@ -633,7 +626,6 @@
                 }
             }
 
-            // ganador highlight
             const left  = card.querySelector('.team-name.left');
             const right = card.querySelector('.team-name.right');
             if (left && right) {
@@ -644,32 +636,78 @@
             }
         }
 
-        // ── poll principal ─────────────────────────────────────────────────
-        async function poll() {
+        // ── aplicar payload ────────────────────────────────────────────────
+        function aplicarDatos(data) {
+            for (const [gid, grupo] of Object.entries(data.tablas)) {
+                const tbl = document.querySelector(`table[data-grupo-id="${gid}"]`);
+                if (tbl) tbl.querySelector('tbody').innerHTML = renderTbody(grupo.tabla);
+            }
+            for (const p of data.partidos) updateCard(p);
+        }
+
+        // ── estado del footer ──────────────────────────────────────────────
+        const footerTxt = document.getElementById('footer-txt');
+        function setFooter(msg) { if (footerTxt) footerTxt.textContent = msg; }
+
+        // ── SSE + fallback a polling ───────────────────────────────────────
+        let es = null;
+        let errorCount = 0;
+        let pollTimer = null;
+        let hayEnCurso = false;
+
+        async function pollOnce() {
             try {
                 const res = await fetch(`/api/clasificacion/${T_ID}`);
                 if (!res.ok) return;
                 const data = await res.json();
                 hayEnCurso = data.hay_partidos_en_curso;
-
-                // clasificación
-                for (const [gid, grupo] of Object.entries(data.tablas)) {
-                    const tbl = document.querySelector(`table[data-grupo-id="${gid}"]`);
-                    if (tbl) tbl.querySelector('tbody').innerHTML = renderTbody(grupo.tabla);
-                }
-
-                // tarjetas de partido
-                for (const p of data.partidos) updateCard(p);
-
+                aplicarDatos(data);
             } catch(e) { /* silencioso */ }
-
-            // siguiente poll: 5s en vivo, 20s en reposo
-            clearTimeout(timer);
-            timer = setTimeout(poll, hayEnCurso ? 5000 : 20000);
         }
 
-        // Arranca inmediatamente (sin espera inicial)
-        poll();
+        function startPolling() {
+            setFooter('Actualización automática cada 5 s');
+            async function loop() {
+                await pollOnce();
+                pollTimer = setTimeout(loop, hayEnCurso ? 5000 : 20000);
+            }
+            loop();
+        }
+
+        function connect() {
+            if (es) { es.close(); es = null; }
+            clearTimeout(pollTimer);
+
+            es = new EventSource(`/api/stream/${T_ID}`);
+
+            es.onopen = () => {
+                errorCount = 0;
+                setFooter('En directo ●');
+            };
+
+            es.onmessage = (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    hayEnCurso = data.hay_partidos_en_curso;
+                    aplicarDatos(data);
+                } catch(err) { /* ignorar mensajes malformados */ }
+            };
+
+            es.onerror = () => {
+                errorCount++;
+                setFooter('Reconectando…');
+                if (errorCount >= 4) {
+                    // SSE no funciona (proxy, red...), caer a polling
+                    es.close();
+                    es = null;
+                    startPolling();
+                }
+                // Si errorCount < 4, el navegador reconecta automáticamente
+            };
+        }
+
+        // Cargar datos iniciales y luego conectar SSE
+        pollOnce().then(connect);
     })();
     </script>
 </body>
