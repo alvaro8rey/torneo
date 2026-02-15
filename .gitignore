@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+
+# Base de datos local (no subir a git — migramos con el script)
+torneo.db
+
+# macOS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/

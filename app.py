@@ -8,9 +8,15 @@ from sqlalchemy import text
 
 app = Flask(__name__)
 
-# Configuración de la Base de Datos SQLite
-db_path = os.path.join(os.path.dirname(__file__), 'torneo.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+# Base de datos: SQLite en local, PostgreSQL en Railway (via DATABASE_URL)
+_db_url = os.environ.get(
+    'DATABASE_URL',
+    'sqlite:///' + os.path.join(os.path.dirname(__file__), 'torneo.db')
+)
+# Railway (y Heroku) dan 'postgres://' pero SQLAlchemy necesita 'postgresql://'
+if _db_url.startswith('postgres://'):
+    _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = _db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = os.environ.get('SECRET_KEY', 'torneo-dev-secret-2024')
 app.permanent_session_lifetime = timedelta(days=7)
