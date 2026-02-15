@@ -531,13 +531,14 @@ def registrar_gol(p_id, equipo_num):
     if equipo_num == 1: p.goles1 += 1
     else: p.goles2 += 1
 
-    db.session.add(EventoGol(partido_id=p_id, equipo=equipo_nombre, dorsal=dorsal, minuto=minuto))
+    nuevo_evento = EventoGol(partido_id=p_id, equipo=equipo_nombre, dorsal=dorsal, minuto=minuto)
+    db.session.add(nuevo_evento)
     gol_rec = Goleador.query.filter_by(dorsal=dorsal, equipo=equipo_nombre, torneo_id=p.grupo.torneo_id).first()
     if gol_rec: gol_rec.goles += 1
     else: db.session.add(Goleador(dorsal=dorsal, equipo=equipo_nombre, goles=1, torneo_id=p.grupo.torneo_id))
 
     db.session.commit()
-    return jsonify({"goles1": p.goles1, "goles2": p.goles2})
+    return jsonify({"goles1": p.goles1, "goles2": p.goles2, "evento_id": nuevo_evento.id})
 
 @app.route('/actualizar_timer/<int:p_id>', methods=['POST'])
 @admin_required

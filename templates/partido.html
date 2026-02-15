@@ -6,276 +6,436 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <title>LIVE: {{ p.equipo1 }} vs {{ p.equipo2 }}</title>
     <style>
-        body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', sans-serif; }
-        .scoreboard { background: #1e293b; border-radius: 20px; padding: 40px; border: 1px solid #334155; }
-        .timer { font-size: 5rem; font-family: 'Courier New', Courier, monospace; color: #fbbf24; font-weight: bold; transition: color 0.3s; }
-        .timer.descanso { color: #60a5fa; font-size: 3.5rem; letter-spacing: 4px; }
-        .score { font-size: 10rem; font-weight: 800; }
-        .team-name { font-size: 2rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; }
-        .historial-item { border-left: 4px solid #3b82f6; background: #334155; margin-bottom: 8px; padding: 12px; border-radius: 0 8px 8px 0; }
-        .modal-content { background-color: #1e293b; color: white; border: 1px solid #334155; }
-        .btn-descanso { background: linear-gradient(45deg, #1d4ed8, #3b82f6); border: none; color: white; }
-        .btn-descanso:hover { background: linear-gradient(45deg, #1e40af, #2563eb); color: white; }
-        .btn-descanso.activo { background: linear-gradient(45deg, #92400e, #f59e0b); }
-        .btn-descanso.activo:hover { background: linear-gradient(45deg, #78350f, #d97706); }
+        :root {
+            --bg:       #0f172a;
+            --surface:  #1e293b;
+            --border:   #334155;
+            --muted:    #64748b;
+            --amber:    #fbbf24;
+            --blue:     #60a5fa;
+            --green:    #4ade80;
+            --red:      #f87171;
+        }
+        * { box-sizing: border-box; }
+        body { background: var(--bg); color: #f1f5f9; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+
+        /* ── CRONÓMETRO ─────────────────────────────────── */
+        .timer-wrap { padding: 20px 0 8px; }
+        .timer {
+            font-size: clamp(3.5rem, 12vw, 6rem);
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: var(--amber);
+            letter-spacing: 4px;
+            line-height: 1;
+            transition: color 0.3s;
+        }
+        .timer.running { text-shadow: 0 0 24px rgba(251,191,36,.35); }
+        .timer.descanso { color: var(--blue); font-size: clamp(1.8rem, 6vw, 2.8rem); letter-spacing: 6px; text-shadow: 0 0 20px rgba(96,165,250,.35); }
+        .timer-sub { font-size: .75rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+        /* ── CONTROLES CRONÓMETRO ───────────────────────── */
+        .ctrl-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 12px 0 24px; }
+        .btn-descanso { background: linear-gradient(135deg, #1d4ed8, #3b82f6); border: none; color: white; }
+        .btn-descanso:hover { background: linear-gradient(135deg, #1e40af, #2563eb); color: white; }
+        .btn-descanso.activo { background: linear-gradient(135deg, #92400e, #f59e0b); }
+        .btn-descanso.activo:hover { background: linear-gradient(135deg, #78350f, #d97706); color: white; }
+
+        /* ── MARCADOR ───────────────────────────────────── */
+        .scoreboard {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px 20px 20px;
+        }
+        .team-name {
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            word-break: break-word;
+        }
+        .score-num {
+            font-size: clamp(4rem, 16vw, 8rem);
+            font-weight: 800;
+            line-height: 1;
+            color: #f1f5f9;
+        }
+        .vs-divider { color: var(--muted); font-size: 1.5rem; font-weight: 300; padding: 0 8px; }
+
+        /* ── INPUT GOL ──────────────────────────────────── */
+        .gol-section { margin-top: 18px; }
+        .gol-label { font-size: .7rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+        .dorsal-input {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            color: #f1f5f9;
+            font-size: 1.1rem;
+            text-align: center;
+            border-radius: 10px 0 0 10px;
+            padding: 10px;
+        }
+        .dorsal-input:focus { outline: none; border-color: #4ade80; box-shadow: none; background: #0f172a; color: #f1f5f9; }
+        .btn-gol {
+            background: linear-gradient(135deg, #15803d, #4ade80);
+            border: none;
+            color: #052e16;
+            font-weight: 800;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            border-radius: 0 10px 10px 0;
+            padding: 10px 18px;
+            transition: filter .15s;
+        }
+        .btn-gol:hover { filter: brightness(1.1); color: #052e16; }
+
+        /* ── TIMELINE DE GOLES ──────────────────────────── */
+        .timeline-header {
+            font-size: .7rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+        .gol-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+            border-left: 3px solid var(--blue);
+            border-radius: 0 8px 8px 0;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            gap: 10px;
+        }
+        .gol-item .minuto-badge {
+            background: rgba(96,165,250,.15);
+            color: var(--blue);
+            border: 1px solid rgba(96,165,250,.3);
+            border-radius: 6px;
+            font-size: .75rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .gol-item .gol-info { flex: 1; font-size: .9rem; }
+        .gol-item .gol-equipo { font-weight: 700; color: #e2e8f0; }
+        .gol-item .gol-dorsal { color: var(--muted); font-size: .8rem; margin-left: 6px; }
+        .btn-anular {
+            background: none;
+            border: 1px solid transparent;
+            color: var(--muted);
+            border-radius: 6px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: border-color .15s, color .15s, background .15s;
+            line-height: 1;
+            padding: 0;
+        }
+        .btn-anular:hover { border-color: var(--red); color: var(--red); background: rgba(248,113,113,.08); }
+
+        /* ── MODAL ──────────────────────────────────────── */
+        .modal-content { background: var(--surface); color: #f1f5f9; border: 1px solid var(--border); }
     </style>
 </head>
 <body>
-    <div class="container py-5 text-center">
+<div class="container py-4 text-center" style="max-width:700px;">
 
-        <div class="timer mb-2" id="timer">00:00</div>
-
-        <div class="mb-5 d-flex flex-wrap justify-content-center gap-2">
-            <button class="btn btn-lg btn-warning px-4 fw-bold" onclick="toggleTimer()" id="btnPause">INICIAR PARTIDO</button>
-            <button class="btn btn-lg btn-descanso px-4 fw-bold" onclick="toggleDescanso()" id="btnDescanso">DESCANSO</button>
-            <button class="btn btn-lg btn-outline-danger" onclick="resetTimer()">RESET</button>
-        </div>
-
-        <div class="scoreboard shadow-lg mb-5">
-            <div class="row align-items-center">
-                <div class="col-md-5">
-                    <div class="team-name mb-2">{{ p.equipo1 }}</div>
-                    <div class="score" id="score1">{{ p.goles1 }}</div>
-                    <div class="input-group mt-4">
-                        <input type="number" id="dorsal1" class="form-control form-control-lg text-center" placeholder="Dorsal">
-                        <button class="btn btn-success btn-lg px-4" onclick="registrarGol(1)">¡GOL!</button>
-                    </div>
-                </div>
-                <div class="col-md-2 h1 text-muted">VS</div>
-                <div class="col-md-5">
-                    <div class="team-name mb-2">{{ p.equipo2 }}</div>
-                    <div class="score" id="score2">{{ p.goles2 }}</div>
-                    <div class="input-group mt-4">
-                        <input type="number" id="dorsal2" class="form-control form-control-lg text-center" placeholder="Dorsal">
-                        <button class="btn btn-success btn-lg px-4" onclick="registrarGol(2)">¡GOL!</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="mx-auto text-start" style="max-width: 600px;">
-            <h4 class="text-info mb-4 border-bottom border-info pb-2">TIMELINE DE GOLES</h4>
-            <div id="historial">
-                {% for evento in p.eventos|sort(attribute='id', reverse=True) %}
-                <div class="historial-item shadow-sm">
-                    <span class="badge bg-info text-dark me-2">{{ evento.minuto }}</span>
-                    <b>Gol de {{ evento.equipo }}</b> (Dorsal #{{ evento.dorsal }})
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <div class="mt-5 pt-5 d-flex justify-content-center gap-3">
-            <a href="/torneo/{{ t_id }}" class="btn btn-outline-secondary px-4">Volver sin finalizar</a>
-            <button onclick="gestionarFinalizacion()" class="btn btn-danger btn-lg px-5 fw-bold">FINALIZAR PARTIDO</button>
-        </div>
+    <!-- CRONÓMETRO -->
+    <div class="timer-wrap">
+        <div class="timer" id="timer">00:00</div>
+        <div class="timer-sub" id="timerSub">tiempo de partido</div>
     </div>
 
-    <!-- Modal para Penaltis -->
-    <div class="modal fade" id="modalPenaltis" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content p-4 text-center">
-                <h3>EMPATE EN ELIMINATORIA</h3>
-                <p class="text-muted">Elige quién ha ganado en la tanda de penaltis para que avance de ronda.</p>
-                <form action="/finalizar/{{ p.id }}" method="POST">
-                    <div class="d-grid gap-3 mt-4">
-                        <button type="submit" name="ganador_penaltis" value="{{ p.equipo1 }}" class="btn btn-primary btn-lg">GANADOR: {{ p.equipo1 }}</button>
-                        <button type="submit" name="ganador_penaltis" value="{{ p.equipo2 }}" class="btn btn-primary btn-lg">GANADOR: {{ p.equipo2 }}</button>
+    <!-- CONTROLES -->
+    <div class="ctrl-bar">
+        <button class="btn btn-warning btn-lg px-4 fw-bold" onclick="toggleTimer()" id="btnPause">INICIAR PARTIDO</button>
+        <button class="btn btn-descanso btn-lg px-4 fw-bold" onclick="toggleDescanso()" id="btnDescanso">DESCANSO</button>
+        <button class="btn btn-outline-secondary" onclick="resetTimer()">RESET</button>
+    </div>
+
+    <!-- MARCADOR -->
+    <div class="scoreboard shadow-lg mb-4">
+        <div class="d-flex align-items-center justify-content-center gap-2">
+            <!-- EQUIPO 1 -->
+            <div class="flex-fill" style="min-width:0;">
+                <div class="team-name mb-1">{{ p.equipo1 }}</div>
+                <div class="score-num" id="score1">{{ p.goles1 }}</div>
+                <div class="gol-section">
+                    <div class="gol-label">⚽ Gol local</div>
+                    <div class="input-group">
+                        <input type="number" id="dorsal1" class="dorsal-input form-control" placeholder="Dorsal" min="0" max="99"
+                               onkeydown="if(event.key==='Enter') registrarGol(1)">
+                        <button class="btn-gol" onclick="registrarGol(1)">¡GOL!</button>
                     </div>
-                </form>
+                </div>
+            </div>
+
+            <div class="vs-divider flex-shrink-0">–</div>
+
+            <!-- EQUIPO 2 -->
+            <div class="flex-fill" style="min-width:0;">
+                <div class="team-name mb-1">{{ p.equipo2 }}</div>
+                <div class="score-num" id="score2">{{ p.goles2 }}</div>
+                <div class="gol-section">
+                    <div class="gol-label">⚽ Gol visitante</div>
+                    <div class="input-group">
+                        <input type="number" id="dorsal2" class="dorsal-input form-control" placeholder="Dorsal" min="0" max="99"
+                               onkeydown="if(event.key==='Enter') registrarGol(2)">
+                        <button class="btn-gol" onclick="registrarGol(2)">¡GOL!</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // -------------------------------------------------------
-        // ESTADO DEL CRONÓMETRO (basado en timestamps, igual que
-        // publico.html → ambas pantallas siempre sincronizadas)
-        // -------------------------------------------------------
-        let baseSeconds  = {{ p.segundos_transcurridos or 0 }};
-        let startWallClock = {{ p.inicio_ts or 0 }};   // timestamp unix del servidor al reanudar
-        let isPaused     = {{ 'false' if not p.esta_pausado else 'true' }};
-        let enDescanso   = {{ 'true' if p.en_descanso else 'false' }};
-        let timerInterval = null;
+    <!-- TIMELINE DE GOLES -->
+    <div class="text-start mb-5">
+        <div class="timeline-header">⚽ &nbsp;Goles del partido</div>
+        <div id="historial">
+            {% for evento in p.eventos|sort(attribute='id', reverse=True) %}
+            <div class="gol-item" data-evento-id="{{ evento.id }}">
+                <span class="minuto-badge">{{ evento.minuto }}</span>
+                <div class="gol-info">
+                    <span class="gol-equipo">{{ evento.equipo }}</span>
+                    <span class="gol-dorsal">#{{ evento.dorsal }}</span>
+                </div>
+                <button class="btn-anular" onclick="anularGol(this, {{ evento.id }})" title="Anular este gol">✕</button>
+            </div>
+            {% endfor %}
+            {% if not p.eventos %}
+            <div class="text-center py-4" style="color:var(--muted); font-size:.85rem;" id="sin-goles">
+                Sin goles anotados
+            </div>
+            {% endif %}
+        </div>
+    </div>
 
-        // Calcula segundos transcurridos en tiempo real (misma fórmula que publico.html)
-        function getElapsedSeconds() {
-            if (isPaused) return baseSeconds;
-            return baseSeconds + Math.floor(Date.now() / 1000) - startWallClock;
+    <!-- ACCIONES FINALES -->
+    <div class="d-flex justify-content-center gap-3 flex-wrap pb-5">
+        <a href="/torneo/{{ t_id }}" class="btn btn-outline-secondary px-4">← Volver</a>
+        <button onclick="gestionarFinalizacion()" class="btn btn-danger btn-lg px-5 fw-bold">FINALIZAR PARTIDO</button>
+    </div>
+</div>
+
+<!-- Modal Penaltis -->
+<div class="modal fade" id="modalPenaltis" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-4 text-center">
+            <h3 class="mb-2">EMPATE EN ELIMINATORIA</h3>
+            <p class="text-muted mb-4">Elige quién gana la tanda de penaltis.</p>
+            <form action="/finalizar/{{ p.id }}" method="POST">
+                <div class="d-grid gap-3">
+                    <button type="submit" name="ganador_penaltis" value="{{ p.equipo1 }}" class="btn btn-primary btn-lg">GANADOR: {{ p.equipo1 }}</button>
+                    <button type="submit" name="ganador_penaltis" value="{{ p.equipo2 }}" class="btn btn-primary btn-lg">GANADOR: {{ p.equipo2 }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ── CRONÓMETRO ─────────────────────────────────────────────────────────
+    let baseSeconds    = {{ p.segundos_transcurridos or 0 }};
+    let startWallClock = {{ p.inicio_ts or 0 }};
+    let isPaused       = {{ 'false' if not p.esta_pausado else 'true' }};
+    let enDescanso     = {{ 'true' if p.en_descanso else 'false' }};
+    let timerInterval  = null;
+
+    function getElapsedSeconds() {
+        if (isPaused) return baseSeconds;
+        return baseSeconds + Math.floor(Date.now() / 1000) - startWallClock;
+    }
+
+    function updateDisplay() {
+        const el  = document.getElementById('timer');
+        const sub = document.getElementById('timerSub');
+        if (enDescanso) {
+            el.textContent  = "DESCANSO";
+            el.className    = "timer descanso";
+            sub.textContent = "intermedio";
+            return;
+        }
+        const totalSecs = getElapsedSeconds();
+        const m = Math.floor(totalSecs / 60);
+        const s = totalSecs % 60;
+        el.textContent  = (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+        el.className    = "timer" + (isPaused ? "" : " running");
+        sub.textContent = isPaused ? "en pausa" : "tiempo de partido";
+    }
+
+    function updateButtons() {
+        const btn  = document.getElementById('btnPause');
+        const btnD = document.getElementById('btnDescanso');
+        if (enDescanso) {
+            btn.textContent = "INICIAR 2ª PARTE";
+            btn.className   = "btn btn-success btn-lg px-4 fw-bold";
+            btnD.textContent = "CANCELAR DESCANSO";
+            btnD.className  = "btn btn-descanso activo btn-lg px-4 fw-bold";
+        } else if (isPaused) {
+            btn.textContent = baseSeconds > 0 ? "CONTINUAR TIEMPO" : "INICIAR PARTIDO";
+            btn.className   = "btn btn-warning btn-lg px-4 fw-bold";
+            btnD.textContent = "DESCANSO";
+            btnD.className  = "btn btn-descanso btn-lg px-4 fw-bold";
+        } else {
+            btn.textContent = "PAUSAR TIEMPO";
+            btn.className   = "btn btn-outline-warning btn-lg px-4";
+            btnD.textContent = "DESCANSO";
+            btnD.className  = "btn btn-descanso btn-lg px-4 fw-bold";
+        }
+    }
+
+    function syncTimerState(pausado, descanso) {
+        const fd = new FormData();
+        fd.append('segundos', getElapsedSeconds());
+        fd.append('pausado', pausado);
+        fd.append('en_descanso', descanso);
+        fetch(`/actualizar_timer/{{ p.id }}`, { method: 'POST', body: fd });
+    }
+
+    function startRunning() {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(updateDisplay, 500);
+        isPaused = false;
+        updateDisplay();
+        updateButtons();
+    }
+
+    function toggleTimer() {
+        if (enDescanso) {
+            enDescanso = false; baseSeconds = 0;
+            startWallClock = Math.floor(Date.now() / 1000);
+            startRunning(); syncTimerState(false, false);
+        } else if (isPaused) {
+            startWallClock = Math.floor(Date.now() / 1000);
+            startRunning(); syncTimerState(false, false);
+        } else {
+            baseSeconds = getElapsedSeconds(); startWallClock = 0;
+            clearInterval(timerInterval); isPaused = true;
+            updateDisplay(); updateButtons(); syncTimerState(true, false);
+        }
+    }
+
+    function toggleDescanso() {
+        if (enDescanso) {
+            enDescanso = false; isPaused = true;
+            updateDisplay(); updateButtons(); syncTimerState(true, false);
+        } else {
+            baseSeconds = getElapsedSeconds(); startWallClock = 0;
+            clearInterval(timerInterval); isPaused = true; enDescanso = true;
+            updateDisplay(); updateButtons(); syncTimerState(true, true);
+        }
+    }
+
+    function resetTimer() {
+        if (confirm("¿Seguro que quieres resetear el cronómetro?")) {
+            clearInterval(timerInterval);
+            baseSeconds = 0; startWallClock = 0; isPaused = true; enDescanso = false;
+            updateDisplay(); updateButtons(); syncTimerState(true, false);
+        }
+    }
+
+    window.onload = function() {
+        if (!isPaused && startWallClock > 0) startRunning();
+        else { updateDisplay(); updateButtons(); }
+    };
+
+    // ── REGISTRAR GOL ──────────────────────────────────────────────────────
+    function registrarGol(num) {
+        const dorsal = document.getElementById('dorsal' + num).value.trim();
+        const minuto = document.getElementById('timer').textContent;
+        const equipo = num === 1 ? "{{ p.equipo1 }}" : "{{ p.equipo2 }}";
+
+        if (!dorsal) {
+            document.getElementById('dorsal' + num).focus();
+            return;
         }
 
-        function updateDisplay() {
-            const el = document.getElementById('timer');
-            if (enDescanso) {
-                el.innerText = "DESCANSO";
-                el.className = "timer descanso mb-2";
-                return;
-            }
-            el.className = "timer mb-2";
-            const totalSecs = getElapsedSeconds();
-            const m = Math.floor(totalSecs / 60);
-            const s = totalSecs % 60;
-            el.innerText = (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
-        }
+        const fd = new FormData();
+        fd.append('dorsal', dorsal);
+        fd.append('minuto', minuto);
 
-        function updateButtons() {
-            const btn = document.getElementById('btnPause');
-            const btnD = document.getElementById('btnDescanso');
-            if (enDescanso) {
-                btn.innerText  = "INICIAR 2ª PARTE";
-                btn.className  = "btn btn-lg btn-success px-4 fw-bold";
-                btnD.innerText = "CANCELAR DESCANSO";
-                btnD.className = "btn btn-lg btn-descanso activo px-4 fw-bold";
-            } else if (isPaused) {
-                btn.innerText  = baseSeconds > 0 ? "CONTINUAR TIEMPO" : "INICIAR PARTIDO";
-                btn.className  = "btn btn-lg btn-warning px-4 fw-bold";
-                btnD.innerText = "DESCANSO";
-                btnD.className = "btn btn-lg btn-descanso px-4 fw-bold";
-            } else {
-                btn.innerText  = "PAUSAR TIEMPO";
-                btn.className  = "btn btn-lg btn-outline-warning px-4";
-                btnD.innerText = "DESCANSO";
-                btnD.className = "btn btn-lg btn-descanso px-4 fw-bold";
-            }
-        }
+        fetch(`/gol/{{ p.id }}/${num}`, { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            // Actualizar marcador
+            document.getElementById('score' + num).textContent = num === 1 ? data.goles1 : data.goles2;
+            document.getElementById('dorsal' + num).value = "";
 
-        function startRunning() {
-            if (timerInterval) clearInterval(timerInterval);
-            // Actualizar cada 500ms para mayor fluidez
-            timerInterval = setInterval(updateDisplay, 500);
-            isPaused = false;
-            updateDisplay();
-            updateButtons();
-        }
+            // Quitar aviso "sin goles" si existe
+            const sinGoles = document.getElementById('sin-goles');
+            if (sinGoles) sinGoles.remove();
 
-        function syncTimerState(pausado, descanso) {
-            const fd = new FormData();
-            fd.append('segundos', getElapsedSeconds());
-            fd.append('pausado', pausado);
-            fd.append('en_descanso', descanso);
-            fetch(`/actualizar_timer/{{ p.id }}`, { method: 'POST', body: fd });
-        }
+            // Añadir al historial
+            const item = document.createElement('div');
+            item.className = 'gol-item';
+            item.dataset.eventoId = data.evento_id;
+            item.innerHTML =
+                `<span class="minuto-badge">${minuto}</span>` +
+                `<div class="gol-info"><span class="gol-equipo">${equipo}</span><span class="gol-dorsal">#${dorsal}</span></div>` +
+                `<button class="btn-anular" onclick="anularGol(this,${data.evento_id})" title="Anular este gol">✕</button>`;
+            document.getElementById('historial').prepend(item);
+        });
+    }
 
-        // Botón principal: Iniciar / Pausar / Iniciar 2ª parte
-        function toggleTimer() {
-            if (enDescanso) {
-                // INICIAR 2ª PARTE: salir del descanso, timer a 00:00
-                enDescanso   = false;
-                baseSeconds  = 0;
-                startWallClock = Math.floor(Date.now() / 1000);
-                startRunning();
-                syncTimerState(false, false);
-            } else if (isPaused) {
-                // REANUDAR o INICIAR
-                startWallClock = Math.floor(Date.now() / 1000);
-                startRunning();
-                syncTimerState(false, false);
-            } else {
-                // PAUSAR
-                baseSeconds = getElapsedSeconds();
-                startWallClock = 0;
-                clearInterval(timerInterval);
-                isPaused = true;
-                updateDisplay();
-                updateButtons();
-                syncTimerState(true, false);
-            }
-        }
+    // ── ANULAR GOL ─────────────────────────────────────────────────────────
+    function anularGol(btn, eventoId) {
+        if (!confirm("¿Anular este gol? Se descontará del marcador.")) return;
 
-        // Botón DESCANSO: activa/desactiva el modo descanso
-        function toggleDescanso() {
-            if (enDescanso) {
-                // Cancelar descanso: volver a pausa (no reinicia timer)
-                enDescanso = false;
-                isPaused   = true;
-                updateDisplay();
-                updateButtons();
-                syncTimerState(true, false);
-            } else {
-                // Activar descanso: pausar y mostrar DESCANSO en ambas pantallas
-                baseSeconds = getElapsedSeconds();
-                startWallClock = 0;
-                clearInterval(timerInterval);
-                isPaused   = true;
-                enDescanso = true;
-                updateDisplay();
-                updateButtons();
-                syncTimerState(true, true);
-            }
-        }
+        btn.disabled = true;
 
-        function resetTimer() {
-            if (confirm("¿Seguro que quieres resetear el cronómetro?")) {
-                clearInterval(timerInterval);
-                baseSeconds    = 0;
-                startWallClock = 0;
-                isPaused       = true;
-                enDescanso     = false;
-                updateDisplay();
-                updateButtons();
-                syncTimerState(true, false);
-            }
-        }
+        fetch(`/eliminar_gol/${eventoId}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status !== 'ok') { btn.disabled = false; return; }
 
-        // Al cargar la página: restaurar estado exacto del servidor
-        window.onload = function () {
-            if (!isPaused && startWallClock > 0) {
-                // El timer estaba corriendo cuando se cargó la página
-                // baseSeconds y startWallClock ya están listos desde el servidor
-                startRunning();
-            } else {
-                updateDisplay();
-                updateButtons();
-            }
-        };
+            // Actualizar marcador
+            document.getElementById('score1').textContent = data.goles1;
+            document.getElementById('score2').textContent = data.goles2;
 
-        // -------------------------------------------------------
-        // GOLES
-        // -------------------------------------------------------
-        function registrarGol(equipoNum) {
-            const dorsal = document.getElementById('dorsal' + equipoNum).value;
-            const minuto = document.getElementById('timer').innerText;
-            const equipoNombre = equipoNum === 1 ? "{{ p.equipo1 }}" : "{{ p.equipo2 }}";
-
-            if (!dorsal) { alert("¡Introduce el dorsal del goleador!"); return; }
-
-            const fd = new FormData();
-            fd.append('dorsal', dorsal);
-            fd.append('minuto', minuto);
-
-            fetch(`/gol/{{ p.id }}/${equipoNum}`, { method: 'POST', body: fd })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('score' + equipoNum).innerText = (equipoNum === 1 ? data.goles1 : data.goles2);
-
-                const item = document.createElement('div');
-                item.className = "historial-item shadow-sm";
-                item.innerHTML = `<span class="badge bg-info text-dark me-2">${minuto}</span> <b>Gol de ${equipoNombre}</b> (Dorsal #${dorsal})`;
-                const historial = document.getElementById('historial');
-                historial.insertBefore(item, historial.firstChild);
-
-                document.getElementById('dorsal' + equipoNum).value = "";
-            });
-        }
-
-        // -------------------------------------------------------
-        // FINALIZAR
-        // -------------------------------------------------------
-        function gestionarFinalizacion() {
-            const g1 = parseInt(document.getElementById('score1').innerText);
-            const g2 = parseInt(document.getElementById('score2').innerText);
-            const esEliminatoria = "{{ p.codigo_partido }}" !== "None" && "{{ p.codigo_partido }}" !== "";
-
-            if (g1 === g2 && esEliminatoria) {
-                const myModal = new bootstrap.Modal(document.getElementById('modalPenaltis'));
-                myModal.show();
-            } else {
-                if (confirm("¿Estás seguro de que quieres dar por finalizado el partido?")) {
-                    window.location.href = "/finalizar/{{ p.id }}";
+            // Quitar el item del DOM
+            const item = btn.closest('.gol-item');
+            item.style.opacity = '0';
+            item.style.transition = 'opacity .2s';
+            setTimeout(() => {
+                item.remove();
+                // Si no quedan goles, mostrar mensaje vacío
+                if (!document.querySelector('#historial .gol-item')) {
+                    const p = document.createElement('div');
+                    p.id = 'sin-goles';
+                    p.className = 'text-center py-4';
+                    p.style.cssText = 'color:var(--muted);font-size:.85rem;';
+                    p.textContent = 'Sin goles anotados';
+                    document.getElementById('historial').appendChild(p);
                 }
-            }
+            }, 200);
+        })
+        .catch(() => { btn.disabled = false; });
+    }
+
+    // ── FINALIZAR ──────────────────────────────────────────────────────────
+    function gestionarFinalizacion() {
+        const g1 = parseInt(document.getElementById('score1').textContent);
+        const g2 = parseInt(document.getElementById('score2').textContent);
+        const esElim = "{{ p.codigo_partido }}" !== "None" && "{{ p.codigo_partido }}" !== "";
+
+        if (g1 === g2 && esElim) {
+            new bootstrap.Modal(document.getElementById('modalPenaltis')).show();
+        } else {
+            if (confirm("¿Finalizar el partido?")) window.location.href = "/finalizar/{{ p.id }}";
         }
-    </script>
+    }
+</script>
 </body>
 </html>
