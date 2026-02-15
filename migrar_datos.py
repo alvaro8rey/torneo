@@ -109,9 +109,7 @@ def _set_fk_checks(enabled: bool):
     if not url.startswith('postgresql'):
         return
     valor = 'DEFAULT' if enabled else 'replica'
-    with db.engine.connect() as conn:
-        conn.execute(db.text(f"SET session_replication_role = {valor}"))
-        conn.commit()
+    db.session.execute(db.text(f"SET session_replication_role = {valor}"))
 
 
 def _reset_sequences():
