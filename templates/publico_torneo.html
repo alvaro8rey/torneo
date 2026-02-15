@@ -139,12 +139,15 @@
 
         /* ── TARJETA DE PARTIDO ── */
         /*
-         * Layout móvil (< 576px):
-         *   Línea 1: [hora] [badge] ────────── [estado]
-         *   Línea 2: [equipo1…] [score] [equipo2…]
+         * Layout móvil (< 576px) — flex-wrap:
+         *   Línea 1: [hora] [badge] ──── [estado]   (meta + estado comparten línea)
+         *   Línea 2: [equipo1…] [score] [equipo2…]  (teams ocupa 100% → nueva línea)
          *
-         * Layout desktop (≥ 576px):
-         *   Una sola línea: [hora] [badge] [eq1] [score] [eq2] [estado]
+         * Layout desktop (≥ 576px) — una sola línea con order:
+         *   [hora] [badge]  |  [equipo1…] [score] [equipo2…]  |  [estado]
+         *
+         * Clave: estado es hermano directo de match-body (no dentro de match-meta),
+         * así se puede reordenar con CSS sin afectar al centrado del resultado.
          */
         .match-card {
             border-left: 3px solid transparent;
@@ -154,28 +157,48 @@
         }
         .match-card.en-curso { border-left-color: #ef4444; animation: pulse-red 2s infinite; }
 
-        .match-body { padding: 8px 10px; }
+        /* match-body: siempre flex-wrap para controlar las dos líneas en móvil */
+        .match-body {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px 8px;
+            padding: 8px 10px;
+        }
 
-        /* Móvil: 2 líneas */
+        /* meta: hora + badge, sin spacer ni estado dentro */
         .match-meta {
             display: flex;
             align-items: center;
             gap: 6px;
-            margin-bottom: 6px;
+            flex-shrink: 0;
+            order: 0;
         }
         .match-meta .hora { font-size: 0.75rem; font-weight: 600; color: #f59e0b; min-width: 36px; }
         .match-meta .grupo-badge {
             font-size: 0.6rem; font-weight: 700;
             padding: 2px 6px; border-radius: 4px;
         }
-        .match-meta .spacer { flex: 1; }
-        .match-estado { font-size: 0.7rem; font-weight: 700; }
 
+        /* estado: hermano directo de match-body
+           Móvil: margin-left:auto lo empuja al extremo derecho de la línea 1
+           Desktop: order:2 lo mueve al final */
+        .match-estado {
+            font-size: 0.7rem;
+            font-weight: 700;
+            order: 1;
+            margin-left: auto;
+        }
+
+        /* teams: ocupa todo el ancho en móvil (nueva línea) y flex:1 en desktop */
         .match-teams {
             display: flex;
             align-items: center;
             gap: 6px;
+            flex: 1 1 100%;   /* móvil: nueva línea */
+            order: 2;
         }
+
         .team-name {
             flex: 1;
             font-size: 0.82rem;
@@ -203,11 +226,11 @@
         .score-final    { background: #14532d; color: #4ade80; }
         .score-final-plata { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
 
-        /* Desktop: todo en una línea */
+        /* Desktop: una sola línea, estado al final a la derecha */
         @media (min-width: 576px) {
-            .match-body { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
-            .match-meta { margin-bottom: 0; flex-shrink: 0; }
-            .match-teams { flex: 1; }
+            .match-body { flex-wrap: nowrap; padding: 8px 12px; }
+            .match-teams { flex: 1 1 auto; order: 1; }
+            .match-estado { order: 2; margin-left: 0; min-width: 64px; text-align: right; }
         }
 
         /* ── DIVISOR ── */
@@ -357,13 +380,12 @@
                             <span class="grupo-badge {% if 'A' in g.nombre %}bg-grupo-a{% elif 'B' in g.nombre %}bg-grupo-b{% elif 'C' in g.nombre %}bg-grupo-c{% else %}bg-grupo-d{% endif %}">
                                 {{ g.nombre.split()[-1] }}
                             </span>
-                            <span class="spacer"></span>
-                            <span class="match-estado">
-                                {% if p.en_curso %}<span class="badge-live">EN VIVO</span>
-                                {% elif p.finalizado %}<span class="text-success">FINAL</span>
-                                {% else %}<span class="text-muted-custom">Pendiente</span>{% endif %}
-                            </span>
                         </div>
+                        <span class="match-estado">
+                            {% if p.en_curso %}<span class="badge-live">EN VIVO</span>
+                            {% elif p.finalizado %}<span class="text-success">FINAL</span>
+                            {% else %}<span class="text-muted-custom">Pendiente</span>{% endif %}
+                        </span>
                         <div class="match-teams">
                             <span class="team-name left {% if p.finalizado and p.goles1>p.goles2 %}winner{% endif %}">{{ p.equipo1 }}</span>
                             <span class="score-pill {% if p.en_curso %}score-live{% elif p.finalizado %}score-final{% else %}score-vs{% endif %}">
@@ -395,13 +417,12 @@
                             <span class="grupo-badge {% if 'A' in g.nombre %}bg-grupo-a{% elif 'B' in g.nombre %}bg-grupo-b{% elif 'C' in g.nombre %}bg-grupo-c{% else %}bg-grupo-d{% endif %}">
                                 {{ g.nombre.split()[-1] }}
                             </span>
-                            <span class="spacer"></span>
-                            <span class="match-estado">
-                                {% if p.en_curso %}<span class="badge-live">EN VIVO</span>
-                                {% elif p.finalizado %}<span class="text-success">FINAL</span>
-                                {% else %}<span class="text-muted-custom">Pendiente</span>{% endif %}
-                            </span>
                         </div>
+                        <span class="match-estado">
+                            {% if p.en_curso %}<span class="badge-live">EN VIVO</span>
+                            {% elif p.finalizado %}<span class="text-success">FINAL</span>
+                            {% else %}<span class="text-muted-custom">Pendiente</span>{% endif %}
+                        </span>
                         <div class="match-teams">
                             <span class="team-name left {% if p.finalizado and p.goles1>p.goles2 %}winner{% endif %}">{{ p.equipo1 }}</span>
                             <span class="score-pill {% if p.en_curso %}score-live{% elif p.finalizado %}score-final{% else %}score-vs{% endif %}">
@@ -434,13 +455,12 @@
                         <div class="match-body" style="border-bottom:1px solid #1e293b;">
                             <div class="match-meta">
                                 <span class="hora">{{ p.hora }}</span>
-                                <span class="spacer"></span>
-                                <span class="match-estado">
-                                    {% if p.en_curso %}<span class="badge-live">EN VIVO</span>
-                                    {% elif p.finalizado %}<span class="text-success">FINAL</span>
-                                    {% else %}<span class="text-muted-custom">Pendiente</span>{% endif %}
-                                </span>
                             </div>
+                            <span class="match-estado">
+                                {% if p.en_curso %}<span class="badge-live">EN VIVO</span>
+                                {% elif p.finalizado %}<span class="text-success">FINAL</span>
+                                {% else %}<span class="text-muted-custom">Pendiente</span>{% endif %}
+                            </span>
                             <div class="match-teams">
                                 <span class="team-name left {% if e1g %}winner{% endif %}">
                                     {{ p.equipo1 or '…' }}
