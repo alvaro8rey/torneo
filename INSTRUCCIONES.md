@@ -33,15 +33,32 @@ torneo_futbol/
 
 ```bash
 cd ~/Desktop/torneo_futbol
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+```
+
+### Activar el entorno virtual (cada vez que abres una terminal nueva)
+
+```bash
+cd ~/Desktop/torneo_futbol
+source venv/bin/activate
+```
+
+Sabrás que está activo porque el prompt cambia a algo como:
+```
+(venv) alvaro@macbook-alvaro torneo_futbol %
+```
+
+Para desactivarlo cuando termines:
+```bash
+deactivate
 ```
 
 ### Arrancar el servidor local
 
 ```bash
-source venv/bin/activate
+# (con el venv activo)
 python app.py
 ```
 
