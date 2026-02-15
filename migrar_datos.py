@@ -72,14 +72,21 @@ def importar():
 
         print("Importando datos...")
 
-        # Insertar en orden respetando las claves foráneas (commit por tabla)
-        _bulk_insert(Torneo,      data['torneos'],       'torneos');      db.session.commit()
-        _bulk_insert(Grupo,       data['grupos'],        'grupos');       db.session.commit()
-        _bulk_insert(Partido,     data['partidos'],      'partidos');     db.session.commit()
-        _bulk_insert(EventoGol,   data['eventos_gol'],   'eventos_gol');  db.session.commit()
-        _bulk_insert(Goleador,    data['goleadores'],    'goleadores');   db.session.commit()
-        _bulk_insert(ConfigCruce, data['config_cruces'], 'config_cruces');db.session.commit()
-        _bulk_insert(ConfigGlobal,data['config_global'], 'config_global');db.session.commit()
+        # Deshabilitar FK constraints para importar sin errores de orden
+        _set_fk_checks(False)
+
+        _bulk_insert(Torneo,      data['torneos'],       'torneos')
+        _bulk_insert(Grupo,       data['grupos'],        'grupos')
+        _bulk_insert(Partido,     data['partidos'],      'partidos')
+        _bulk_insert(EventoGol,   data['eventos_gol'],   'eventos_gol')
+        _bulk_insert(Goleador,    data['goleadores'],    'goleadores')
+        _bulk_insert(ConfigCruce, data['config_cruces'], 'config_cruces')
+        _bulk_insert(ConfigGlobal,data['config_global'], 'config_global')
+
+        db.session.commit()
+
+        # Rehabilitar FK constraints
+        _set_fk_checks(True)
 
         # Sincronizar las secuencias de ID en PostgreSQL
         _reset_sequences()
@@ -94,6 +101,17 @@ def _bulk_insert(model, rows, nombre):
     for row in rows:
         db.session.add(model(**row))
     print(f"  {nombre}: {len(rows)} registros")
+
+
+def _set_fk_checks(enabled: bool):
+    """Habilita o deshabilita FK constraints en PostgreSQL (no aplica a SQLite)."""
+    url = str(db.engine.url)
+    if not url.startswith('postgresql'):
+        return
+    valor = 'DEFAULT' if enabled else 'replica'
+    with db.engine.connect() as conn:
+        conn.execute(db.text(f"SET session_replication_role = {valor}"))
+        conn.commit()
 
 
 def _reset_sequences():
