@@ -386,7 +386,7 @@
                 {% endfor %}
                 {% for item in lista_c1|sort(attribute='h') %}
                 {% set p = item.p %}{% set g = item.g %}
-                <div class="card match-card {% if p.en_curso %}en-curso{% endif %}">
+                <div class="card match-card {% if p.en_curso %}en-curso{% endif %}" data-partido-id="{{ p.id }}">
                     <div class="match-body">
                         <div class="match-meta">
                             <span class="hora">{{ p.hora }}</span>
@@ -423,7 +423,7 @@
                 {% endfor %}
                 {% for item in lista_c2|sort(attribute='h') %}
                 {% set p = item.p %}{% set g = item.g %}
-                <div class="card match-card {% if p.en_curso %}en-curso{% endif %}">
+                <div class="card match-card {% if p.en_curso %}en-curso{% endif %}" data-partido-id="{{ p.id }}">
                     <div class="match-body">
                         <div class="match-meta">
                             <span class="hora">{{ p.hora }}</span>
@@ -464,7 +464,7 @@
                     {% for p in g.partidos %}
                     {% set e1g = p.finalizado and (p.goles1>p.goles2 or p.ganador_penaltis==p.equipo1) %}
                     {% set e2g = p.finalizado and (p.goles2>p.goles1 or p.ganador_penaltis==p.equipo2) %}
-                    <div class="match-card {% if p.en_curso %}en-curso{% endif %}" style="margin:0; border-radius:0; border-left:0;">
+                    <div class="match-card {% if p.en_curso %}en-curso{% endif %}" style="margin:0; border-radius:0; border-left:0;" data-partido-id="{{ p.id }}">
                         <div class="match-body" style="border-bottom:1px solid #1e293b;">
                             <div class="match-meta">
                                 <span class="hora">{{ p.hora }}</span>
@@ -507,17 +507,16 @@
                     {% for p in g.partidos %}
                     {% set e1g = p.finalizado and (p.goles1>p.goles2 or p.ganador_penaltis==p.equipo1) %}
                     {% set e2g = p.finalizado and (p.goles2>p.goles1 or p.ganador_penaltis==p.equipo2) %}
-                    <div class="match-card {% if p.en_curso %}en-curso{% endif %}" style="margin:0; border-radius:0; border-left:0;">
+                    <div class="match-card {% if p.en_curso %}en-curso{% endif %}" style="margin:0; border-radius:0; border-left:0;" data-partido-id="{{ p.id }}">
                         <div class="match-body" style="border-bottom:1px solid #1e293b;">
                             <div class="match-meta">
                                 <span class="hora">{{ p.hora }}</span>
-                                <span class="spacer"></span>
-                                <span class="match-estado">
-                                    {% if p.en_curso %}<span class="badge-live">EN VIVO</span>
-                                    {% elif p.finalizado %}<span class="text-success">FINAL</span>
-                                    {% else %}<span class="text-muted-custom">Pendiente</span>{% endif %}
-                                </span>
                             </div>
+                            <span class="match-estado">
+                                {% if p.en_curso %}<span class="badge-live">EN VIVO</span>
+                                {% elif p.finalizado %}<span class="text-success">FINAL</span>
+                                {% else %}<span class="text-muted-custom">Pendiente</span>{% endif %}
+                            </span>
                             <div class="match-teams">
                                 <span class="team-name left {% if e1g %}winner{% endif %}">
                                     {{ p.equipo1 or '…' }}
@@ -574,45 +573,78 @@
     </div>
 
     <script>
-    // ── CLASIFICACIÓN EN VIVO ──────────────────────────────────────────────
-    // Polling al endpoint /api/clasificacion/<t_id> para actualizar la tabla
-    // cada 5s si hay partidos en curso, cada 30s si no.
-    // Cuando hay cambios en el orden la tabla se re-renderiza por completo;
-    // los equipos jugando ahora aparecen con punto rojo y fondo rojizo.
     (function() {
         const T_ID = {{ t.id }};
         let hayEnCurso = false;
         let timer = null;
 
-        function dgStr(dg) {
-            if (dg > 0) return '+' + dg;
-            if (dg < 0) return '' + dg;
-            return '0';
-        }
-        function dgClass(dg) {
-            return dg > 0 ? 'text-success' : dg < 0 ? 'text-danger' : '';
-        }
+        // ── helpers clasificación ──────────────────────────────────────────
+        const dgStr = dg => dg > 0 ? '+' + dg : '' + dg;
+        const dgCls = dg => dg > 0 ? 'text-success' : dg < 0 ? 'text-danger' : '';
 
         function renderTbody(filas) {
             return filas.map((r, i) => {
-                const pos = i + 1;
-                const pasa = pos <= 2;
-                const trClass = [pasa ? 'pasa-ronda' : '', r.en_curso ? 'equipo-en-directo' : ''].join(' ').trim();
-                const numClass = pos === 1 ? 'text-warning' : pos === 2 ? 'text-info' : '';
+                const pos = i + 1, pasa = pos <= 2;
+                const trCls = (pasa ? 'pasa-ronda ' : '') + (r.en_curso ? 'equipo-en-directo' : '');
+                const numCls = pos === 1 ? 'text-warning' : pos === 2 ? 'text-info' : '';
                 const dot = r.en_curso ? '<span class="equipo-live-dot"></span>' : '';
                 const dg = r.dg;
-                return `<tr style="border-bottom:1px solid #1e293b;" class="${trClass}">
-                    <td class="col-sticky-num text-center fw-bold ${numClass}">${pos}</td>
-                    <td class="col-sticky-equipo equipo-cell ${pasa ? 'fw-bold' : ''}">${dot}${r.equipo}${pasa ? '<span class="text-success ms-1" style="font-size:.6rem">✓</span>' : ''}</td>
-                    <td class="text-center fw-bold ${pasa ? 'text-warning' : ''}">${r.pts}</td>
+                return `<tr style="border-bottom:1px solid #1e293b;" class="${trCls}">
+                    <td class="col-sticky-num text-center fw-bold ${numCls}">${pos}</td>
+                    <td class="col-sticky-equipo equipo-cell ${pasa?'fw-bold':''}">${dot}${r.equipo}${pasa?'<span class="text-success ms-1" style="font-size:.6rem">✓</span>':''}</td>
+                    <td class="text-center fw-bold ${pasa?'text-warning':''}">${r.pts}</td>
                     <td class="text-center text-muted-custom">${r.pj}</td>
                     <td class="text-center text-success">${r.gf}</td>
                     <td class="text-center text-danger">${r.gc}</td>
-                    <td class="text-center ${dgClass(dg)}">${dgStr(dg)}</td>
+                    <td class="text-center ${dgCls(dg)}">${dgStr(dg)}</td>
                 </tr>`;
             }).join('');
         }
 
+        // ── actualizar tarjeta de partido ──────────────────────────────────
+        // Actualiza score, estado y clases de ganador sin recargar la página.
+        function updateCard(p) {
+            const card = document.querySelector(`[data-partido-id="${p.id}"]`);
+            if (!card) return;
+
+            // clase en-curso en la tarjeta
+            card.classList.toggle('en-curso', p.en_curso);
+
+            // badge de estado
+            const estado = card.querySelector('.match-estado');
+            if (estado) {
+                if (p.en_curso)      estado.innerHTML = '<span class="badge-live">EN VIVO</span>';
+                else if (p.finalizado) estado.innerHTML = '<span class="text-success">FINAL</span>';
+                else                 estado.innerHTML = '<span class="text-muted-custom">Pendiente</span>';
+            }
+
+            // marcador
+            const pill = card.querySelector('.score-pill');
+            if (pill) {
+                if (p.en_curso || p.finalizado) {
+                    const cls = p.en_curso ? 'score-live'
+                               : p.es_plata ? 'score-final-plata' : 'score-final';
+                    pill.className = 'score-pill ' + cls;
+                    // thinsp como carácter unicode para evitar entidades HTML en JS
+                    pill.textContent = p.goles1 + '\u2009-\u2009' + p.goles2;
+                } else {
+                    pill.className = 'score-pill score-vs';
+                    pill.textContent = 'vs';
+                }
+            }
+
+            // ganador highlight
+            const left  = card.querySelector('.team-name.left');
+            const right = card.querySelector('.team-name.right');
+            if (left && right) {
+                const e1g = p.finalizado && (p.goles1 > p.goles2 || p.ganador_penaltis === p.equipo1);
+                const e2g = p.finalizado && (p.goles2 > p.goles1 || p.ganador_penaltis === p.equipo2);
+                left.classList.toggle('winner', e1g);
+                right.classList.toggle('winner', e2g);
+            }
+        }
+
+        // ── poll principal ─────────────────────────────────────────────────
         async function poll() {
             try {
                 const res = await fetch(`/api/clasificacion/${T_ID}`);
@@ -620,22 +652,24 @@
                 const data = await res.json();
                 hayEnCurso = data.hay_partidos_en_curso;
 
+                // clasificación
                 for (const [gid, grupo] of Object.entries(data.tablas)) {
                     const tbl = document.querySelector(`table[data-grupo-id="${gid}"]`);
-                    if (!tbl) continue;
-                    tbl.querySelector('tbody').innerHTML = renderTbody(grupo.tabla);
+                    if (tbl) tbl.querySelector('tbody').innerHTML = renderTbody(grupo.tabla);
                 }
+
+                // tarjetas de partido
+                for (const p of data.partidos) updateCard(p);
+
             } catch(e) { /* silencioso */ }
-            schedule();
-        }
 
-        function schedule() {
+            // siguiente poll: 5s en vivo, 20s en reposo
             clearTimeout(timer);
-            timer = setTimeout(poll, hayEnCurso ? 5000 : 30000);
+            timer = setTimeout(poll, hayEnCurso ? 5000 : 20000);
         }
 
-        // Arranca el ciclo
-        schedule();
+        // Arranca inmediatamente (sin espera inicial)
+        poll();
     })();
     </script>
 </body>

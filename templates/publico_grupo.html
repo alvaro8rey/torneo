@@ -302,10 +302,10 @@
             {% if en_curso %}
             <div class="section-label">En juego ahora</div>
             {% for p in en_curso %}
-            <div class="match-row">
+            <div class="match-row" data-partido-id="{{ p.id }}">
                 <div class="match-meta">
                     <span class="hora-chip">{{ p.hora }}</span>
-                    <span class="badge-live">EN VIVO</span>
+                    <span class="match-estado"><span class="badge-live">EN VIVO</span></span>
                 </div>
                 <div class="match-teams">
                     <span class="team-name left">{{ p.equipo1 }}</span>
@@ -321,10 +321,10 @@
             {% for p in jugados %}
             {% set e1g = p.goles1 > p.goles2 or p.ganador_penaltis == p.equipo1 %}
             {% set e2g = p.goles2 > p.goles1 or p.ganador_penaltis == p.equipo2 %}
-            <div class="match-row">
+            <div class="match-row" data-partido-id="{{ p.id }}">
                 <div class="match-meta">
                     <span class="hora-chip" style="color:#94a3b8; background:rgba(148,163,184,0.07);">{{ p.hora }}</span>
-                    <span class="estado-chip text-success">FINAL{% if p.ganador_penaltis %} <span style="color:#f59e0b;font-size:.6rem">PEN</span>{% endif %}</span>
+                    <span class="match-estado"><span class="estado-chip text-success">FINAL{% if p.ganador_penaltis %} <span style="color:#f59e0b;font-size:.6rem">PEN</span>{% endif %}</span></span>
                 </div>
                 <div class="match-teams">
                     <span class="team-name left {% if e1g %}winner{% endif %}">{{ p.equipo1 }}</span>
@@ -338,10 +338,10 @@
             {% if pendientes %}
             <div class="section-label">Pendientes</div>
             {% for p in pendientes %}
-            <div class="match-row">
+            <div class="match-row" data-partido-id="{{ p.id }}">
                 <div class="match-meta">
                     <span class="hora-chip">{{ p.hora }}</span>
-                    <span class="estado-chip text-muted-custom">Pendiente</span>
+                    <span class="match-estado"><span class="estado-chip text-muted-custom">Pendiente</span></span>
                 </div>
                 <div class="match-teams">
                     <span class="team-name left text-muted-custom">{{ p.equipo1 }}</span>
@@ -371,38 +371,73 @@
         let hayEnCurso = false;
         let timer = null;
 
-        function dgStr(dg) {
-            if (dg > 0) return '+' + dg;
-            if (dg < 0) return '' + dg;
-            return '0';
-        }
-        function dgClass(dg) {
-            return dg > 0 ? 'text-success' : dg < 0 ? 'text-danger' : '';
-        }
+        // ── helpers clasificación ──────────────────────────────────────────
+        const dgStr = dg => dg > 0 ? '+' + dg : '' + dg;
+        const dgCls = dg => dg > 0 ? 'text-success' : dg < 0 ? 'text-danger' : '';
 
         function renderTbody(filas) {
             return filas.map((r, i) => {
-                const pos = i + 1;
-                const pasa = pos <= 2;
-                const trClass = [pasa ? 'pasa-ronda' : '', r.en_curso ? 'equipo-en-directo' : ''].join(' ').trim();
-                const numClass = pos === 1 ? 'text-warning' : pos === 2 ? 'text-info' : '';
+                const pos = i + 1, pasa = pos <= 2;
+                const trCls = (pasa ? 'pasa-ronda ' : '') + (r.en_curso ? 'equipo-en-directo' : '');
+                const numCls = pos === 1 ? 'text-warning' : pos === 2 ? 'text-info' : '';
                 const dot = r.en_curso ? '<span class="equipo-live-dot"></span>' : '';
                 const dg = r.dg;
-                return `<tr class="${trClass}">
-                    <td class="col-sticky-num text-center fw-bold ${numClass}">${pos}</td>
-                    <td class="col-sticky-equipo equipo-cell ${pasa ? 'fw-bold' : ''}">${dot}${r.equipo}${pasa ? '<span class="text-success ms-1" style="font-size:.65rem;">✓</span>' : ''}</td>
-                    <td class="text-center fw-bold ${pasa ? 'text-warning' : ''}">${r.pts}</td>
+                return `<tr class="${trCls}">
+                    <td class="col-sticky-num text-center fw-bold ${numCls}">${pos}</td>
+                    <td class="col-sticky-equipo equipo-cell ${pasa?'fw-bold':''}">${dot}${r.equipo}${pasa?'<span class="text-success ms-1" style="font-size:.65rem;">✓</span>':''}</td>
+                    <td class="text-center fw-bold ${pasa?'text-warning':''}">${r.pts}</td>
                     <td class="text-center text-muted-custom">${r.pj}</td>
                     <td class="text-center text-success">${r.pg}</td>
                     <td class="text-center text-muted-custom">${r.pe}</td>
                     <td class="text-center text-danger">${r.pp}</td>
                     <td class="text-center text-success">${r.gf}</td>
                     <td class="text-center text-danger">${r.gc}</td>
-                    <td class="text-center ${dgClass(dg)}">${dgStr(dg)}</td>
+                    <td class="text-center ${dgCls(dg)}">${dgStr(dg)}</td>
                 </tr>`;
             }).join('');
         }
 
+        // ── actualizar fila de partido ─────────────────────────────────────
+        function updateRow(p) {
+            const row = document.querySelector(`[data-partido-id="${p.id}"]`);
+            if (!row) return;
+
+            // badge de estado
+            const estado = row.querySelector('.match-estado');
+            if (estado) {
+                if (p.en_curso)        estado.innerHTML = '<span class="badge-live">EN VIVO</span>';
+                else if (p.finalizado) {
+                    const pen = p.ganador_penaltis ? ' <span style="color:#f59e0b;font-size:.6rem">PEN</span>' : '';
+                    estado.innerHTML = `<span class="estado-chip text-success">FINAL${pen}</span>`;
+                } else                 estado.innerHTML = '<span class="estado-chip text-muted-custom">Pendiente</span>';
+            }
+
+            // marcador
+            const pill = row.querySelector('.score-pill');
+            if (pill) {
+                if (p.en_curso || p.finalizado) {
+                    pill.className = 'score-pill ' + (p.en_curso ? 'score-live' : 'score-final');
+                    pill.textContent = p.goles1 + '\u2009-\u2009' + p.goles2;
+                } else {
+                    pill.className = 'score-pill score-vs';
+                    pill.textContent = 'vs';
+                }
+            }
+
+            // ganador
+            const left  = row.querySelector('.team-name.left');
+            const right = row.querySelector('.team-name.right');
+            if (left && right) {
+                const e1g = p.finalizado && (p.goles1 > p.goles2 || p.ganador_penaltis === p.equipo1);
+                const e2g = p.finalizado && (p.goles2 > p.goles1 || p.ganador_penaltis === p.equipo2);
+                left.classList.toggle('winner', e1g);
+                left.classList.toggle('text-muted-custom', !p.en_curso && !p.finalizado);
+                right.classList.toggle('winner', e2g);
+                right.classList.toggle('text-muted-custom', !p.en_curso && !p.finalizado);
+            }
+        }
+
+        // ── poll principal ─────────────────────────────────────────────────
         async function poll() {
             try {
                 const res = await fetch(`/api/clasificacion/${T_ID}`);
@@ -410,21 +445,26 @@
                 const data = await res.json();
                 hayEnCurso = data.hay_partidos_en_curso;
 
+                // clasificación
                 const grupoData = data.tablas[String(G_ID)];
                 if (grupoData) {
                     const tbl = document.querySelector(`table[data-grupo-id="${G_ID}"]`);
                     if (tbl) tbl.querySelector('tbody').innerHTML = renderTbody(grupoData.tabla);
                 }
+
+                // filas de partido de este grupo
+                for (const p of data.partidos) {
+                    if (p.grupo_id === G_ID) updateRow(p);
+                }
             } catch(e) { /* silencioso */ }
-            schedule();
-        }
 
-        function schedule() {
+            // siguiente poll: 5s en vivo, 20s en reposo
             clearTimeout(timer);
-            timer = setTimeout(poll, hayEnCurso ? 5000 : 30000);
+            timer = setTimeout(poll, hayEnCurso ? 5000 : 20000);
         }
 
-        schedule();
+        // Arranca inmediatamente
+        poll();
     })();
     </script>
 </body>

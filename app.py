@@ -584,9 +584,27 @@ def api_clasificacion(t_id):
                 for equipo, s in tablas[g.id]
             ]
         }
+    # Marcadores de todos los partidos (para actualizar tarjetas sin recargar página)
+    todos_partidos = [
+        {
+            'id':               p.id,
+            'grupo_id':         g.id,
+            'equipo1':          p.equipo1 or '…',
+            'equipo2':          p.equipo2 or '…',
+            'goles1':           p.goles1,
+            'goles2':           p.goles2,
+            'en_curso':         p.en_curso,
+            'finalizado':       p.finalizado,
+            'ganador_penaltis': p.ganador_penaltis or '',
+            'es_plata':         'Consolaci' in g.nombre,
+        }
+        for g in t.grupos for p in g.partidos
+    ]
+
     return jsonify({
         'tablas': result,
-        'hay_partidos_en_curso': len(equipos_en_curso) > 0
+        'hay_partidos_en_curso': len(equipos_en_curso) > 0,
+        'partidos': todos_partidos,
     })
 
 @app.route('/api/partidos_activos')
