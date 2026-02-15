@@ -55,6 +55,19 @@
             white-space: nowrap;
         }
 
+        /* ── EQUIPO EN DIRECTO (clasificación live) ── */
+        .equipo-live-dot {
+            display: inline-block;
+            width: 7px; height: 7px;
+            background: #ef4444;
+            border-radius: 50%;
+            margin-right: 4px;
+            flex-shrink: 0;
+            animation: blink 1.4s infinite;
+        }
+        tr.equipo-en-directo > td { background: rgba(239,68,68,0.07) !important; }
+        tr.equipo-en-directo.pasa-ronda > td { background: rgba(239,68,68,0.12) !important; }
+
         /* ── HEADER ── */
         .header-pub {
             background: linear-gradient(135deg, #0f2d4a 0%, #1e293b 100%);
@@ -317,7 +330,7 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="tabla-scroll-wrap">
-                        <table class="table mb-0" style="border-collapse:collapse;">
+                        <table class="table mb-0" style="border-collapse:collapse;" data-grupo-id="{{ g.id }}">
                             <thead>
                                 <tr style="border-bottom:1px solid #334155;">
                                     <th class="ps-2 col-sticky-num text-center">#</th>
@@ -560,6 +573,70 @@
         Actualización automática cada 30 s
     </div>
 
-    <script>setTimeout(()=>location.reload(), 30000);</script>
+    <script>
+    // ── CLASIFICACIÓN EN VIVO ──────────────────────────────────────────────
+    // Polling al endpoint /api/clasificacion/<t_id> para actualizar la tabla
+    // cada 5s si hay partidos en curso, cada 30s si no.
+    // Cuando hay cambios en el orden la tabla se re-renderiza por completo;
+    // los equipos jugando ahora aparecen con punto rojo y fondo rojizo.
+    (function() {
+        const T_ID = {{ t.id }};
+        let hayEnCurso = false;
+        let timer = null;
+
+        function dgStr(dg) {
+            if (dg > 0) return '+' + dg;
+            if (dg < 0) return '' + dg;
+            return '0';
+        }
+        function dgClass(dg) {
+            return dg > 0 ? 'text-success' : dg < 0 ? 'text-danger' : '';
+        }
+
+        function renderTbody(filas) {
+            return filas.map((r, i) => {
+                const pos = i + 1;
+                const pasa = pos <= 2;
+                const trClass = [pasa ? 'pasa-ronda' : '', r.en_curso ? 'equipo-en-directo' : ''].join(' ').trim();
+                const numClass = pos === 1 ? 'text-warning' : pos === 2 ? 'text-info' : '';
+                const dot = r.en_curso ? '<span class="equipo-live-dot"></span>' : '';
+                const dg = r.dg;
+                return `<tr style="border-bottom:1px solid #1e293b;" class="${trClass}">
+                    <td class="col-sticky-num text-center fw-bold ${numClass}">${pos}</td>
+                    <td class="col-sticky-equipo equipo-cell ${pasa ? 'fw-bold' : ''}">${dot}${r.equipo}${pasa ? '<span class="text-success ms-1" style="font-size:.6rem">✓</span>' : ''}</td>
+                    <td class="text-center fw-bold ${pasa ? 'text-warning' : ''}">${r.pts}</td>
+                    <td class="text-center text-muted-custom">${r.pj}</td>
+                    <td class="text-center text-success">${r.gf}</td>
+                    <td class="text-center text-danger">${r.gc}</td>
+                    <td class="text-center ${dgClass(dg)}">${dgStr(dg)}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function poll() {
+            try {
+                const res = await fetch(`/api/clasificacion/${T_ID}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                hayEnCurso = data.hay_partidos_en_curso;
+
+                for (const [gid, grupo] of Object.entries(data.tablas)) {
+                    const tbl = document.querySelector(`table[data-grupo-id="${gid}"]`);
+                    if (!tbl) continue;
+                    tbl.querySelector('tbody').innerHTML = renderTbody(grupo.tabla);
+                }
+            } catch(e) { /* silencioso */ }
+            schedule();
+        }
+
+        function schedule() {
+            clearTimeout(timer);
+            timer = setTimeout(poll, hayEnCurso ? 5000 : 30000);
+        }
+
+        // Arranca el ciclo
+        schedule();
+    })();
+    </script>
 </body>
 </html>

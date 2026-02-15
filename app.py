@@ -167,6 +167,32 @@ def obtener_tablas(torneo_id):
         tablas[g.id] = sorted(stats.items(), key=lambda x: (x[1]['pts'], x[1]['gf']-x[1]['gc'], x[1]['gf']), reverse=True)
     return tablas
 
+def obtener_tablas_live(torneo_id):
+    """Como obtener_tablas pero incluye partidos en_curso (marcador provisional)."""
+    grupos = Grupo.query.filter_by(torneo_id=torneo_id).all()
+    tablas = {}
+    for g in grupos:
+        if not g.nombre.startswith("Grupo"): continue
+        lista_equipos = [e.strip() for e in g.equipos.split(',') if e.strip()]
+        if not lista_equipos: continue
+        stats = {e: {"pj": 0, "pg": 0, "pe": 0, "pp": 0, "gf": 0, "gc": 0, "pts": 0} for e in lista_equipos}
+        for p in g.partidos:
+            if not p.finalizado and not p.en_curso: continue
+            e1, e2 = p.equipo1, p.equipo2
+            if e1 in stats and e2 in stats:
+                stats[e1]["pj"] += 1; stats[e2]["pj"] += 1
+                stats[e1]["gf"] += p.goles1; stats[e1]["gc"] += p.goles2
+                stats[e2]["gf"] += p.goles2; stats[e2]["gc"] += p.goles1
+                if p.goles1 > p.goles2:
+                    stats[e1]["pts"] += 3; stats[e1]["pg"] += 1; stats[e2]["pp"] += 1
+                elif p.goles2 > p.goles1:
+                    stats[e2]["pts"] += 3; stats[e2]["pg"] += 1; stats[e1]["pp"] += 1
+                else:
+                    stats[e1]["pts"] += 1; stats[e2]["pts"] += 1
+                    stats[e1]["pe"] += 1; stats[e2]["pe"] += 1
+        tablas[g.id] = sorted(stats.items(), key=lambda x: (x[1]['pts'], x[1]['gf']-x[1]['gc'], x[1]['gf']), reverse=True)
+    return tablas
+
 def actualizar_cruces_eliminatorias(torneo_id):
     tablas = obtener_tablas(torneo_id)
     grupos = Grupo.query.filter_by(torneo_id=torneo_id).all()
@@ -524,6 +550,44 @@ def actualizar_timer(p_id):
     p.en_curso = True
     db.session.commit()
     return jsonify({"status": "ok"})
+
+@app.route('/api/clasificacion/<int:t_id>')
+def api_clasificacion(t_id):
+    """Devuelve la clasificación provisional (incluyendo partidos en curso) y
+    qué equipos están jugando ahora mismo. Usado para polling en vivo."""
+    t = Torneo.query.get_or_404(t_id)
+    tablas = obtener_tablas_live(t_id)
+
+    # Equipos actualmente en partido en curso (solo grupos de letra)
+    equipos_en_curso = set()
+    for g in t.grupos:
+        if g.nombre.startswith("Grupo"):
+            for p in g.partidos:
+                if p.en_curso:
+                    equipos_en_curso.add(p.equipo1)
+                    equipos_en_curso.add(p.equipo2)
+
+    result = {}
+    for g in t.grupos:
+        if not g.nombre.startswith("Grupo") or g.id not in tablas:
+            continue
+        result[str(g.id)] = {
+            'nombre': g.nombre,
+            'tabla': [
+                {
+                    'equipo': equipo,
+                    'pts': s['pts'], 'pj': s['pj'], 'pg': s['pg'],
+                    'pe':  s['pe'],  'pp': s['pp'], 'gf': s['gf'],
+                    'gc':  s['gc'],  'dg': s['gf'] - s['gc'],
+                    'en_curso': equipo in equipos_en_curso,
+                }
+                for equipo, s in tablas[g.id]
+            ]
+        }
+    return jsonify({
+        'tablas': result,
+        'hay_partidos_en_curso': len(equipos_en_curso) > 0
+    })
 
 @app.route('/api/partidos_activos')
 def api_partidos():
