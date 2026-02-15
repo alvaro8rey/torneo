@@ -72,16 +72,14 @@ def importar():
 
         print("Importando datos...")
 
-        # Insertar en orden respetando las claves foráneas
-        _bulk_insert(Torneo,      data['torneos'],       'torneos');      db.session.flush()
-        _bulk_insert(Grupo,       data['grupos'],        'grupos');       db.session.flush()
-        _bulk_insert(Partido,     data['partidos'],      'partidos');     db.session.flush()
-        _bulk_insert(EventoGol,   data['eventos_gol'],   'eventos_gol');  db.session.flush()
-        _bulk_insert(Goleador,    data['goleadores'],    'goleadores');   db.session.flush()
-        _bulk_insert(ConfigCruce, data['config_cruces'], 'config_cruces');db.session.flush()
-        _bulk_insert(ConfigGlobal,data['config_global'], 'config_global');db.session.flush()
-
-        db.session.commit()
+        # Insertar en orden respetando las claves foráneas (commit por tabla)
+        _bulk_insert(Torneo,      data['torneos'],       'torneos');      db.session.commit()
+        _bulk_insert(Grupo,       data['grupos'],        'grupos');       db.session.commit()
+        _bulk_insert(Partido,     data['partidos'],      'partidos');     db.session.commit()
+        _bulk_insert(EventoGol,   data['eventos_gol'],   'eventos_gol');  db.session.commit()
+        _bulk_insert(Goleador,    data['goleadores'],    'goleadores');   db.session.commit()
+        _bulk_insert(ConfigCruce, data['config_cruces'], 'config_cruces');db.session.commit()
+        _bulk_insert(ConfigGlobal,data['config_global'], 'config_global');db.session.commit()
 
         # Sincronizar las secuencias de ID en PostgreSQL
         _reset_sequences()
