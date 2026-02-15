@@ -73,6 +73,11 @@
             animation: pulse 2s infinite;
         }
 
+        .badge-live.proximo {
+            background-color: #334155;
+            animation: none;
+        }
+
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.6; }
@@ -281,46 +286,57 @@
         async function fetchPartidos() {
             try {
                 const response = await fetch('/api/partidos_activos');
+                if (!response.ok) return;
                 const data = await response.json();
 
                 for (let i = 1; i <= 2; i++) {
                     const campo = data[`campo_${i}`];
-                    
-                    // Actualizar Actual/En Vivo
+                    const badge = document.getElementById(`status-${i}`);
+
                     if (campo.actual) {
+                        // Partido en curso
                         document.getElementById(`c${i}-eq1`).innerText = campo.actual.equipo1;
                         document.getElementById(`c${i}-eq2`).innerText = campo.actual.equipo2;
                         document.getElementById(`c${i}-g1`).innerText = campo.actual.goles1;
                         document.getElementById(`c${i}-g2`).innerText = campo.actual.goles2;
-                        document.getElementById(`status-${i}`).innerText = "EN DIRECTO";
-                        document.getElementById(`status-${i}`).style.backgroundColor = "#ef4444";
+                        badge.innerText = "EN DIRECTO";
+                        badge.classList.remove("proximo");
                         actualizarReloj(campo.actual, `timer-${i}`);
                     } else {
-                        // Si no hay partido activo, mostrar marcador vacío o siguiente
+                        // Sin partido activo: mostrar próximo o vacío
                         document.getElementById(`c${i}-eq1`).innerText = campo.proximo ? campo.proximo.equipo1 : "--";
                         document.getElementById(`c${i}-eq2`).innerText = campo.proximo ? campo.proximo.equipo2 : "--";
-                        document.getElementById(`c${i}-g1`).innerText = "0";
-                        document.getElementById(`c${i}-g2`).innerText = "0";
-                        document.getElementById(`status-${i}`).innerText = "PRÓXIMO";
-                        document.getElementById(`status-${i}`).style.backgroundColor = "#334155";
+                        // Bug fix: no mostrar "0" cuando no hay partido en curso
+                        document.getElementById(`c${i}-g1`).innerText = "--";
+                        document.getElementById(`c${i}-g2`).innerText = "--";
+                        badge.innerText = campo.proximo ? "PRÓXIMO" : "SIN PARTIDO";
+                        // Bug fix: quitar animación pulsante cuando no está en directo
+                        badge.classList.add("proximo");
                         document.getElementById(`timer-${i}`).innerText = "--:--";
                     }
 
-                    // Actualizar Último Finalizado
+                    // Último finalizado
                     if (campo.ultimo_finalizado) {
-                        document.getElementById(`c${i}-ant`).innerText = 
+                        document.getElementById(`c${i}-ant`).innerText =
                             `${campo.ultimo_finalizado.equipo1} ${campo.ultimo_finalizado.goles1} - ${campo.ultimo_finalizado.goles2} ${campo.ultimo_finalizado.equipo2}`;
                     }
 
-                    // Actualizar Siguiente
+                    // Siguiente
                     if (campo.proximo) {
-                        document.getElementById(`c${i}-sig`).innerText = 
+                        document.getElementById(`c${i}-sig`).innerText =
                             `${campo.proximo.equipo1} vs ${campo.proximo.equipo2}`;
                         document.getElementById(`c${i}-sig-hora`).innerText = campo.proximo.hora;
                     }
                 }
             } catch (error) {
-                console.error("Error cargando datos:", error);
+                // Bug fix: marcar visualmente el error en lugar de fallar en silencio
+                for (let i = 1; i <= 2; i++) {
+                    const badge = document.getElementById(`status-${i}`);
+                    if (badge && badge.innerText !== "EN DIRECTO") {
+                        badge.innerText = "SIN CONEXIÓN";
+                        badge.classList.add("proximo");
+                    }
+                }
             }
         }
 

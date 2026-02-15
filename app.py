@@ -1,8 +1,10 @@
 import os
 import time
+import json as _json
+import hashlib
 from functools import wraps
 from datetime import timedelta
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session, Response, stream_with_context
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 
@@ -558,14 +560,13 @@ def actualizar_timer(p_id):
     db.session.commit()
     return jsonify({"status": "ok"})
 
-@app.route('/api/clasificacion/<int:t_id>')
-def api_clasificacion(t_id):
-    """Devuelve la clasificación provisional (incluyendo partidos en curso) y
-    qué equipos están jugando ahora mismo. Usado para polling en vivo."""
-    t = Torneo.query.get_or_404(t_id)
+def _clasificacion_data(t_id):
+    """Construye el payload de clasificación+partidos. Reutilizado por la API y SSE."""
+    t = Torneo.query.get(t_id)
+    if not t:
+        return None
     tablas = obtener_tablas_live(t_id)
 
-    # Equipos actualmente en partido en curso (solo grupos de letra)
     equipos_en_curso = set()
     for g in t.grupos:
         if g.nombre.startswith("Grupo"):
@@ -591,7 +592,6 @@ def api_clasificacion(t_id):
                 for equipo, s in tablas[g.id]
             ]
         }
-    # Marcadores de todos los partidos (para actualizar tarjetas sin recargar página)
     todos_partidos = [
         {
             'id':               p.id,
@@ -607,12 +607,53 @@ def api_clasificacion(t_id):
         }
         for g in t.grupos for p in g.partidos
     ]
-
-    return jsonify({
+    return {
         'tablas': result,
         'hay_partidos_en_curso': len(equipos_en_curso) > 0,
         'partidos': todos_partidos,
-    })
+    }
+
+
+@app.route('/api/clasificacion/<int:t_id>')
+def api_clasificacion(t_id):
+    """Devuelve la clasificación provisional (incluyendo partidos en curso) y
+    qué equipos están jugando ahora mismo. Usado para polling en vivo."""
+    Torneo.query.get_or_404(t_id)
+    data = _clasificacion_data(t_id)
+    return jsonify(data)
+
+
+@app.route('/api/stream/<int:t_id>')
+def stream_clasificacion(t_id):
+    """SSE: empuja actualizaciones de clasificación en tiempo real."""
+    Torneo.query.get_or_404(t_id)
+
+    def generate():
+        last_hash = None
+        deadline = time.time() + 90  # el cliente reconecta automáticamente cada 90 s
+        while time.time() < deadline:
+            try:
+                db.session.remove()  # sesión fresca para ver cambios nuevos
+                data = _clasificacion_data(t_id)
+                if data:
+                    s = _json.dumps(data, separators=(',', ':'))
+                    h = hashlib.md5(s.encode()).hexdigest()
+                    if h != last_hash:
+                        last_hash = h
+                        yield f"data: {s}\n\n"
+                    else:
+                        yield ": hb\n\n"  # heartbeat para mantener la conexión
+            except GeneratorExit:
+                return
+            except Exception:
+                yield ": err\n\n"
+            time.sleep(2)
+
+    return Response(
+        stream_with_context(generate()),
+        content_type='text/event-stream',
+        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},
+    )
 
 @app.route('/api/partidos_activos')
 def api_partidos():
