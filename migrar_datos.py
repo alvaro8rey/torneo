@@ -73,13 +73,13 @@ def importar():
         print("Importando datos...")
 
         # Insertar en orden respetando las claves foráneas
-        _bulk_insert(Torneo,      data['torneos'],       'torneos')
-        _bulk_insert(Grupo,       data['grupos'],        'grupos')
-        _bulk_insert(Partido,     data['partidos'],      'partidos')
-        _bulk_insert(EventoGol,   data['eventos_gol'],   'eventos_gol')
-        _bulk_insert(Goleador,    data['goleadores'],    'goleadores')
-        _bulk_insert(ConfigCruce, data['config_cruces'], 'config_cruces')
-        _bulk_insert(ConfigGlobal,data['config_global'], 'config_global')
+        _bulk_insert(Torneo,      data['torneos'],       'torneos');      db.session.flush()
+        _bulk_insert(Grupo,       data['grupos'],        'grupos');       db.session.flush()
+        _bulk_insert(Partido,     data['partidos'],      'partidos');     db.session.flush()
+        _bulk_insert(EventoGol,   data['eventos_gol'],   'eventos_gol');  db.session.flush()
+        _bulk_insert(Goleador,    data['goleadores'],    'goleadores');   db.session.flush()
+        _bulk_insert(ConfigCruce, data['config_cruces'], 'config_cruces');db.session.flush()
+        _bulk_insert(ConfigGlobal,data['config_global'], 'config_global');db.session.flush()
 
         db.session.commit()
 
